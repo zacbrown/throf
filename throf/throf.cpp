@@ -2,7 +2,7 @@
 
 using namespace throf;
 
-const char* const INIT_FILENAME = "e:\\code\\throf\\debug\\init.th4";
+const char* const INIT_FILENAME = "init.th4";
 
 void dumpTokens(Tokenizer& tokenizer)
 {

@@ -1,0 +1,27 @@
+# Some core stack manipulation words.
+: dup ( x -- x x )
+    0 pick ;
+
+: ?dup ( n -- n n | 0 )
+    dup [ dup ] [ ] if ;
+
+: over ( x y -- x y x )
+    1 pick ;
+
+: nip ( x y -- y )
+    swap drop ;
+
+: tuck ( x y -- y x y ) 
+    swap over ;
+
+: -rot ( x y z -- z x y ) 
+    rot rot ;
+
+: 2dup ( x y -- x y x y ) 
+    1 pick 1 pick ;
+
+: 2drop ( x y -- )
+    drop drop ;
+
+: 2over ( w x y z -- w x y z w x )
+    3 pick 3 pick ;

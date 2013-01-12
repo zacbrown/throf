@@ -1,0 +1,7 @@
+# combinator words
+
+: when ( v q -- )
+	[ ] if ;
+
+: unless ( v q -- )
+	[ ] swap if ;

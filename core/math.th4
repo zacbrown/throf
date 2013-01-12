@@ -1,0 +1,13 @@
+# math words
+
+: negate ( x -- y )
+    -1 * ;
+
+: min ( x y -- z )
+    2dup < [ drop ] [ nip ] if ;
+
+: max ( x y -- z )
+    2dup > [ drop ] [ nip ] if ;
+
+: abs ( n -- +n )
+	dup 0 < [ negate ] when ;

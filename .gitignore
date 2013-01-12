@@ -11,3 +11,17 @@
 *.lai
 *.la
 *.a
+
+# Visual SlickEdit intermediate files
+*.vp*
+*.vtg
+
+# Visual Studio intermediate files
+*.*sdf
+*.*log
+*.suo
+*.pdb
+*.obj
+*.vcxproj.user
+Debug
+ipch

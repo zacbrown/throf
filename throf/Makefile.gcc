@@ -1,0 +1,19 @@
+CFLAGS=-c -Wall -Werror -g
+
+all: stdafx.o common.o interpreter.o throf.o tokenizer.o
+	g++ stdafx.o common.o interpreter.o throf.o tokenizer.o -o throf 
+
+stdafx.o: stdafx.cpp stdafx.h
+	g++ $(CFLAGS) stdafx.cpp
+
+common.o: common.cpp
+	g++ $(CFLAGS) common.cpp
+
+interpreter.o: interpreter.cpp
+	g++ $(CFLAGS) interpreter.cpp
+
+tokenizer.o: tokenizer.cpp
+	g++ $(CFLAGS) tokenizer.cpp
+
+throf.o: throf.cpp
+	g++ $(CFLAGS) throf.cpp

@@ -70,7 +70,7 @@
       </Command>
     </CustomBuildStep>
     <PostBuildEvent>
-      <Command>xcopy /Y $(ProjectDir)\..\init.th4 $(TargetDir)\init.th4 &amp; xcopy /Y /E $(ProjectDir)\..\core $(TargetDir)\core\</Command>
+      <Command>xcopy /Y $(ProjectDir)\..\init.th4 $(TargetDir)\init.th4 &amp; xcopy /Y $(ProjectDir)\..\tests.th4 $(TargetDir)\tests.th4 &amp; xcopy /Y /E $(ProjectDir)\..\core $(TargetDir)\core\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

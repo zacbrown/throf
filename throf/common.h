@@ -15,6 +15,7 @@ namespace throf
     const PRIMITIVE_WORD PRIM_ ## e = val; \
     const char* const PRIM_ ## e ## _STR = str \
     
+    op_code(CLS, -2, "cls");
     op_code(STACK, -1, "stack");
     op_code(IF, 0, "if");
     op_code(DROP, 1, "drop");
@@ -25,13 +26,13 @@ namespace throf
     op_code(SET, 6, "set!");
     op_code(GET, 7, "get");
     op_code(ROT, 8, "rot");
-    op_code(PICK, 9, "pick");
-    op_code(ADD, 10, "+");
-    op_code(SUB, 11, "-");
-    op_code(MUL, 12, "*");
-    op_code(DIV, 13, "/");
-    op_code(MOD, 14, "mod");
-
+    op_code(NROT, 9, "-rot");
+    op_code(PICK, 10, "pick");
+    op_code(ADD, 11, "+");
+    op_code(SUB, 12, "-");
+    op_code(MUL, 13, "*");
+    op_code(DIV, 14, "/");
+    op_code(MOD, 15, "mod");
     op_code(LT, 16, "<");
     op_code(GT, 17, ">");
     op_code(LTE, 18, "<=");
@@ -49,6 +50,7 @@ namespace throf
     static unordered_map<string, PRIMITIVE_WORD> createStrToPrimMap()
     {
         unordered_map<string, PRIMITIVE_WORD> ret;
+        ret[PRIM_CLS_STR]       = PRIM_CLS      ;
         ret[PRIM_STACK_STR]     = PRIM_STACK    ;
         ret[PRIM_IF_STR]        = PRIM_IF       ;
         ret[PRIM_DROP_STR]      = PRIM_DROP     ;
@@ -59,6 +61,7 @@ namespace throf
         ret[PRIM_SET_STR]       = PRIM_SET      ;
         ret[PRIM_GET_STR]       = PRIM_GET      ;
         ret[PRIM_ROT_STR]       = PRIM_ROT      ;
+        ret[PRIM_NROT_STR]      = PRIM_NROT     ;
         ret[PRIM_PICK_STR]      = PRIM_PICK     ;
         ret[PRIM_ADD_STR]       = PRIM_ADD      ;
         ret[PRIM_SUB_STR]       = PRIM_SUB      ;
@@ -82,6 +85,7 @@ namespace throf
     static unordered_map<PRIMITIVE_WORD, string> createPrimToStrMap()
     {
         unordered_map<PRIMITIVE_WORD, string> ret;
+        ret[PRIM_CLS]       = PRIM_CLS_STR      ;
         ret[PRIM_STACK]     = PRIM_STACK_STR    ;
         ret[PRIM_IF]        = PRIM_IF_STR       ;
         ret[PRIM_DROP]      = PRIM_DROP_STR     ;
@@ -92,6 +96,7 @@ namespace throf
         ret[PRIM_SET]       = PRIM_SET_STR      ;
         ret[PRIM_GET]       = PRIM_GET_STR      ;
         ret[PRIM_ROT]       = PRIM_ROT_STR      ;
+        ret[PRIM_NROT]      = PRIM_NROT_STR     ;
         ret[PRIM_PICK]      = PRIM_PICK_STR     ;
         ret[PRIM_ADD]       = PRIM_ADD_STR      ;
         ret[PRIM_SUB]       = PRIM_SUB_STR      ;

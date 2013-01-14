@@ -14,9 +14,6 @@
 : tuck ( x y -- y x y ) 
     swap over ;
 
-: -rot ( x y z -- z x y ) 
-    rot rot ;
-
 : 2dup ( x y -- x y x y ) 
     1 pick 1 pick ;
 

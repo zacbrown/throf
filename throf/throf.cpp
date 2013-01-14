@@ -38,11 +38,10 @@ int main(int argc, char* argv[])
         string filename = argv[1];
         try
         {
-            FileReader reader(filename);
-            Tokenizer tokenizer = Tokenizer::tokenize(reader);
-            dumpTokens(tokenizer);
             Interpreter interpreter;
             loadInitFile(interpreter);
+            FileReader reader(filename);
+            Tokenizer tokenizer = Tokenizer::tokenize(reader);
             interpreter.loadFile(tokenizer);
             interpreter.dumpInterpreterState();
         }

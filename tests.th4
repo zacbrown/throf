@@ -1,0 +1,90 @@
+# combinator tests
+: test_if -5 [ "if test pass" ] [ "if test fail" ] if ;
+
+: test_unless 0 [ "unless test pass" ] unless ;
+
+: test_when 1 [ "when test pass" ] when ;
+
+test_if
+test_unless
+test_when
+
+# stack effect tests
+: test_swap 1 2 swap 1 == [ "swap passed" ] [ "swap failed" ] if ;
+
+: test_dup "dup test passed if two of these are on the stack" dup ;
+
+: test_over 1 2 over 1 == [ "over passed" ] [ "over failed" ] if ;
+
+: test_tuck 55 6 tuck 6 == [ "tuck passed" ] [ "tuck failed" ] if ;
+
+: test_?dup 666 0 ?dup swap 666 == [ "?dup passed" ] [ "?dup failed" ] if ;
+
+: test_nip 5 44 3 nip swap 5 == [ "nip passed" ] [ "nip failed" ] if ;
+
+: test_rot
+    1 2 3 rot 
+    1 == [
+        3 == [
+            2 == [
+                "rot passed" ]  [ "rot failed" ] if 
+            ] [ "rot failed" ] if 
+        ] [ "rot failed" ] if ;
+
+
+: test_-rot
+    1 2 3 -rot 
+    2 == [
+        1 == [ 
+            3 == [ 
+                "-rot passed" ]  [ "-rot failed" ] if 
+            ] [ "-rot failed" ] if 
+         ] [ "-rot failed" ] if ;
+
+: test_2dup
+    1 2 2dup
+    2 == [ 
+        1 == [
+            2 == [
+                1 == [ 
+                    "2dup passed" ] [ "2dup failed" ] if
+                ] [ "2dup failed" ] if
+            ] [ "2dup failed" ] if
+        ] [ "2dup failed" ] if ;
+
+: test_2drop 
+    1 2 3 2drop 1 == [ "2drop passed" ] [ "2drop failed" ] if ;
+
+: test_2over
+    1 2 3 4 2over
+    2 == [
+        1 == [ "2over passed" ] [ "2over failed" ] if
+        ] [ "2over failed" ] if ;
+
+
+
+test_swap
+test_dup
+test_?dup
+test_over
+test_nip
+test_tuck
+test_rot
+test_-rot
+test_2dup
+test_2drop
+test_2over
+
+# math tests
+: test_negate -5555 negate 0 < [ "negate failed" ] [ "negate passed" ] if ;
+
+: test_min 0 5 min [ "min failed" ] [ "min passed" ] if ;
+
+: test_max 0 5 max [ "max passed" ] [ "max failed" ] if ;
+
+: test_abs -444 abs 0 > [ "abs passed" ] [ "abs failed" ] if ;
+
+test_negate
+test_min
+test_max
+test_abs

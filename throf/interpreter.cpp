@@ -23,7 +23,7 @@ namespace throf
             string str = (*itr).first;
             PRIMITIVE_WORD prim = (*itr).second;
             _stringToWordDict[str] = prim;
-            _dictionary[prim] = vector<Token>();
+            _dictionary[prim] = vector<StackElement>();
         }
     }
 
@@ -55,33 +55,45 @@ namespace throf
         }
     }
 
-    void Interpreter::dispatchWord(const string& s)
+    void Interpreter::dispatch(const StackElement& elem)
     {
-        WORD_IDX idx = _stringToWordDict[s];
         string& filename = _filename;
-
-        auto dispatch_arithmetic = [](WORD_IDX operation, const StackElement& top, const StackElement& bottom)
+        switch (elem.type())
         {
-            long ret = 0;
+        case StackElement::Boolean:
+        case StackElement::Number:
+        case StackElement::String:
+        case StackElement::Quotation:
+        case StackElement::Variable:
+            _stack.emplace_back(elem);
+            return;
+        case StackElement::WordReference:
+            break;
+        default:
+            throw ThrofException("Interpreter", "Unexpected uninitialized StackElement.", _filename);
+        }
+
+        WORD_IDX idx = elem.wordRefIdx();
+
+        auto dispatch_arithmetic = [filename](WORD_IDX operation, const StackElement& top, const StackElement& bottom)
+        {
             switch (operation)
             {
             case PRIM_ADD:
-                ret = bottom.numberData() + top.numberData();
-                break;
+                return bottom.numberData() + top.numberData();
             case PRIM_SUB:
-                ret = bottom.numberData() - top.numberData();
-                break;
+                return bottom.numberData() - top.numberData();
             case PRIM_MUL:
-                ret = bottom.numberData() * top.numberData();
-                break;
+                return bottom.numberData() * top.numberData();
             case PRIM_DIV:
-                ret = bottom.numberData() / top.numberData();
-                break;
+                return bottom.numberData() / top.numberData();
             case PRIM_MOD:
-                ret = bottom.numberData() % top.numberData();
+                return bottom.numberData() % top.numberData();
             }
 
-            return ret;
+            stringstream strBuilder;
+            strBuilder << "unexpected word passed as arithmetic word : '" << operation << "'";
+            throw ThrofException("Interpreter", strBuilder.str(), filename);
         };
 
         auto dispatch_comparison = [filename](WORD_IDX operation, const StackElement& top, const StackElement& bottom)
@@ -105,6 +117,9 @@ namespace throf
 
         switch(idx)
         {
+        case PRIM_CLS:
+            _stack.clear();
+            break;
         case PRIM_STACK:
             printf("%s", stackToString().c_str());
             break;
@@ -114,19 +129,13 @@ namespace throf
                 StackElement trueQuotation = _stack.back(); _stack.pop_back();
                 StackElement boolOutcome = _stack.back(); _stack.pop_back();
 
-                if (boolOutcome.booleanData())
+                throwIfTypeUnexpected(falseQuotation, StackElement::Quotation, "Expected quotation as 3rd stack argument to 'if' word : ");
+                throwIfTypeUnexpected(trueQuotation, StackElement::Quotation, "Expected quotation as 2nd stack argument to 'if' word : ");
+
+                const vector<StackElement>& q = boolOutcome.booleanData() ? trueQuotation.quotationData() : falseQuotation.quotationData();
+                for (auto elem : q)
                 {
-                    for (auto tok : trueQuotation.quotationData())
-                    {
-                        processToken(tok);
-                    }
-                }
-                else
-                {
-                    for (auto tok : falseQuotation.quotationData())
-                    {
-                        processToken(tok);
-                    }
+                    dispatch(elem);
                 }
             }
             break;
@@ -170,11 +179,17 @@ namespace throf
             break;
         case PRIM_ROT:
             {
+                auto itr = _stack.end();
+                itr -= 3;
+                StackElement elem = *itr;
+                _stack.erase(itr);
+                _stack.emplace_back(elem);
+            }
+            break;
+        case PRIM_NROT:
+            {
                 StackElement elem = _stack.back(); _stack.pop_back();
                 auto itr = _stack.end();
-                // decrement to point to first element, once to point to second element
-                // Iterators puzzlingly point just before first/behind last element when
-                // initialized. Perhaps by convenience?
                 itr -= 2;
                 _stack.insert(itr, elem);
             }
@@ -189,14 +204,14 @@ namespace throf
                     throw ThrofException("Interpreter", "must provide non-negative number (>0) to PICK", _filename);
                 }
 
-                auto itr = _stack.cend(); itr--;
+                auto itr = _stack.end(); itr--;
                 int idx = 0;
-                while (idx < elemIndex.numberData() && itr != _stack.cbegin())
+                while (idx < elemIndex.numberData() && itr != _stack.begin())
                 {
                     itr--;
                     idx++;
                 }
-                const StackElement& elem = *itr;
+                StackElement elem = *itr;
                 _stack.emplace_back(elem);
             }
             break;
@@ -224,7 +239,6 @@ namespace throf
                 throwIfTypeUnexpected(bottom, StackElement::Number, "expected number, got : ");
                 _stack.emplace_back(StackElement(StackElement::Boolean,
                     StackElement::BooleanType(dispatch_comparison(idx, top, bottom))));
-                
             }
             break;
         case PRIM_EQ:
@@ -260,7 +274,6 @@ namespace throf
                         throw ThrofException("Interpreter", strBuilder.str(), _filename);
                     }
                 }
-                printInfo("top: %s, bottom: %s, ret: %d", top.stringData().c_str(), bottom.stringData().c_str(), ret);
                 // change the return value if necessary
                 if (PRIM_NEQ == idx)
                 {
@@ -305,84 +318,127 @@ namespace throf
                     StackElement::BooleanType(ret)));
             }
             break;
+            
         default:
-            vector<Token> toks = _dictionary[idx];
-            for (auto itr = toks.cbegin(); itr != toks.cend(); itr++)
+            // Non-core word used
+            auto def = _dictionary[idx];
+            for (auto itr = def.begin(); itr != def.end(); itr++)
             {
-                Token tok = (*itr);
-                if (tok.getType() == Token::TokenType::QuotationOpen)
+                StackElement& elem = *itr;
+                switch(elem.type())
                 {
-                    vector<Token> quotation;
-                    while (itr != toks.cend())
-                    {
-                        tok = *(++itr);
-
-                        if (tok.getType() == Token::TokenType::QuotationClose)
-                        {
-                            break;
-                        }
-
-                        quotation.emplace_back(tok);
-                    }
-
-                    if (tok.getType() != Token::TokenType::QuotationClose)
-                    {
-                        throw ThrofException("Interpreter", "unexpected end of quotation without closing marker ']'", _filename);
-                    }
-
-                    _stack.emplace_back(StackElement(StackElement::Quotation, quotation));
-                }
-                else
-                {
-                    processToken(tok);
+                case StackElement::Boolean:
+                case StackElement::Number:
+                case StackElement::String:
+                case StackElement::Quotation:
+                    _stack.emplace_back(StackElement(elem));
+                    break;
+                case StackElement::WordReference:
+                    dispatch(elem);
+                    break;
                 }
             }
             break;
         }
     }
 
-    void Interpreter::addWordToDictionary(const string& s, vector<Token> toks)
-    {
-        WORD_IDX idx = _stringToWordDict[s] = _stringToWordDict.size() + 1;
-        _dictionary[idx] = toks;
-    }
-
-    void Interpreter::processToken(const Token& tok)
+    StackElement Interpreter::createStackElementFromToken(Tokenizer& tokenizer, const Token& tok)
     {
         bool isTrueToken = (0 == tok.getData().compare("true"));
         if (isTrueToken || 0 == tok.getData().compare("false"))
         {
-            _stack.emplace_back(StackElement(StackElement::ElementType::Boolean,
-                StackElement::BooleanType(isTrueToken)));
-        }
-        else if (contains(_stringToWordDict, tok.getData()))
-        {
-            dispatchWord(tok.getData());
-        }
-        else if (contains(_variableDictionary, tok.getData()))
-        {
-            _stack.emplace_back(StackElement(StackElement::ElementType::Variable,
-                tok.getData()));
+            return StackElement(StackElement::Boolean,
+                StackElement::BooleanType(isTrueToken));
         }
         else if (is_number(tok.getData()))
         {
             // ohai, it's a number
-            _stack.emplace_back(StackElement(StackElement::ElementType::Number,
-                parse_number(tok.getData())));
+            return StackElement(StackElement::Number,
+                parse_number(tok.getData()));
         }
         else if (tok.getType() == Token::TokenType::StringLiteral)
         {
             // ohai, it's a string literal
             //
             // escaped quotations are not really supported yet...
-            _stack.emplace_back(StackElement(StackElement::ElementType::String,
-                tok.getData()));
+            return StackElement(StackElement::String,
+                tok.getData());
+        }
+        else if (tok.getType() == Token::TokenType::QuotationOpen)
+        {
+            vector<StackElement> quotation;
+            while (tokenizer.hasNextToken())
+            {
+                Token nextTok = tokenizer.getNextToken();
+
+                if (nextTok.getType() == Token::TokenType::QuotationClose)
+                {
+                    break;
+                }
+
+                quotation.emplace_back(createStackElementFromToken(tokenizer, nextTok));
+            }
+
+            return StackElement(StackElement::Quotation, quotation);
+        }
+        else if (contains(_stringToWordDict, tok.getData()))
+        {
+            WORD_IDX idx = _stringToWordDict[tok.getData()];
+            return StackElement(StackElement::WordReference, idx, tok.getData());
+        }
+        else if (contains(_variableDictionary, tok.getData()))
+        {
+            return StackElement(StackElement::ElementType::Variable, tok.getData());
         }
         else
         {
             stringstream strBuilder;
             strBuilder << "'" << tok.getData() << "' (type: " << tok.getType() << ") is not a defined word or valid data type";
             throw ThrofException("Interpreter", strBuilder.str().c_str(), _filename);
+        }
+    }
+
+    void Interpreter::addWordToDictionary(Tokenizer& tokenizer, const string& s)
+    {
+        WORD_IDX idx = _stringToWordDict[s] = _stringToWordDict.size() + 1;
+        vector<StackElement> ret;
+
+        Token tok = tokenizer.getNextToken();
+        while (tok.getType() != Token::DefinitionTerminator)
+        {
+            ret.emplace_back(createStackElementFromToken(tokenizer, tok));
+
+            if (tokenizer.hasNextToken())
+            {
+                tok = tokenizer.getNextToken();
+            }
+            else
+            {
+                stringstream errBuilder;
+                errBuilder << "word definition terminator (' ; ') expected at end of word '";
+                errBuilder << s << "'";
+                throw ThrofException("Interpreter", errBuilder.str(), tokenizer.filename());
+            }
+        }
+
+        _dictionary[idx] = ret;
+    }
+
+    void Interpreter::processToken(Tokenizer& tokenizer, const Token& tok)
+    {
+        StackElement elem = createStackElementFromToken(tokenizer, tok);
+        switch (elem.type())
+        {
+        case StackElement::Boolean:
+        case StackElement::Number:
+        case StackElement::String:
+        case StackElement::Variable:
+        case StackElement::Quotation:
+            _stack.emplace_back(elem);
+            break;
+        case StackElement::WordReference:
+            dispatch(elem);
+            break;
         }
     }
 
@@ -412,28 +468,6 @@ namespace throf
     void Interpreter::loadFile(Tokenizer& tokenizer)
     {
         _filename = tokenizer.filename();
-        auto fetch_words_till_terminator = [](const string& wordName, Tokenizer& tokenizer)
-        {
-            vector<Token> tokens;
-            Token tok = tokenizer.getNextToken();
-            while (tok.getType() != Token::TokenType::DefinitionTerminator)
-            {
-                tokens.emplace_back(tok);
-                if (tokenizer.hasNextToken())
-                {
-                    tok = tokenizer.getNextToken();
-                }
-                else
-                {
-                    stringstream errBuilder;
-                    errBuilder << "word definition terminator (' ; ') expected at end of word '";
-                    errBuilder << wordName << "'";
-                    throw ThrofException("Interpreter", errBuilder.str(), tokenizer.filename());
-                }
-            }
-
-            return tokens;
-        };
 
         while (tokenizer.hasNextToken())
         {
@@ -441,11 +475,11 @@ namespace throf
             switch (tok.getType())
             {
             case Token::TokenType::WordDefinition:
-                addWordToDictionary(tok.getData(), fetch_words_till_terminator(tok.getData(), tokenizer));
+                addWordToDictionary(tokenizer, tok.getData());
                 break;
             case Token::TokenType::WordOrData:
             case Token::TokenType::StringLiteral:
-                processToken(tok);
+                processToken(tokenizer, tok);
                 break;
             case Token::TokenType::Directive:
                 {
@@ -455,7 +489,7 @@ namespace throf
                 break;
             case Token::TokenType::QuotationOpen:
                 {
-                    vector<Token> quotation;
+                    vector<StackElement> quotation;
                     while (tokenizer.hasNextToken())
                     {
                         tok = tokenizer.getNextToken();
@@ -465,7 +499,7 @@ namespace throf
                             break;
                         }
 
-                        quotation.emplace_back(Token(tok));
+                        quotation.emplace_back(createStackElementFromToken(tokenizer, tok));
                     }
 
                     if (tok.getType() != Token::TokenType::QuotationClose)
@@ -473,7 +507,7 @@ namespace throf
                         throw ThrofException("Interpreter", "unexpected end of quotation without closing marker ']'", _filename);
                     }
 
-                    _stack.emplace_back(StackElement(StackElement::ElementType::Quotation, quotation));
+                    _stack.emplace_back(StackElement(StackElement::Quotation, quotation));
                 }
                 break;
             case Token::TokenType::QuotationClose:
@@ -487,19 +521,48 @@ namespace throf
         }
     }
 
-    static void prettyFormatQuotationStackElement(StackElement& elem, stringstream& strBuilder)
+    void Interpreter::prettyFormatStackElement(const StackElement& elem, stringstream& strBuilder)
     {
-        vector<Token> toks = elem.quotationData();
-        for (size_t ii = 0; ii < toks.size(); ii++)
+        switch (elem.type())
         {
-            if (toks[ii].getType() == Token::TokenType::StringLiteral)
+        case StackElement::Variable:
+            strBuilder << elem.stringData() << " ";
+            break;
+        case StackElement::String:
+            strBuilder << "\"" << elem.stringData() << "\" ";
+            break;
+        case StackElement::Number:
+            strBuilder << elem.numberData() << " ";
+            break;
+        case StackElement::Boolean:
+            strBuilder << elem.booleanData() << " ";
+            break;
+        case StackElement::Quotation:
+            prettyFormatQuotation(elem, strBuilder);
+            break;
+        case StackElement::WordReference:
             {
-                strBuilder << "\"" << toks[ii].getData() << "\" ";
+                vector<StackElement>& wordDef = _dictionary[elem.wordRefIdx()];
+                for (auto itr = wordDef.begin(); itr != wordDef.end(); itr++)
+                {
+                    prettyFormatStackElement(*itr, strBuilder);
+                }
             }
-            else
-            {
-                strBuilder << toks[ii].getData() << " ";
-            }
+            break;
+        default:
+            stringstream errBuilder;
+            errBuilder << "unexpected stack element type (" << elem.type() << ")" << endl;
+            throw ThrofException("Interpreter", errBuilder.str().c_str());
+            break;
+        }
+    }
+
+    void Interpreter::prettyFormatQuotation(const StackElement& elem, stringstream& strBuilder)
+    {
+        vector<StackElement> elements = elem.quotationData();
+        for (size_t ii = 0; ii < elements.size(); ii++)
+        {
+            prettyFormatStackElement(elements[ii], strBuilder);
         }
     }
 
@@ -509,31 +572,12 @@ namespace throf
         strBuilder << "Stack (size: " << _stack.size() << "): " << endl << endl;
         strBuilder << "\t  Top" << endl << "\t---------" << endl;
 
-        for (auto itr = _stack.crbegin(); itr != _stack.crend(); itr++)
+        for (auto itr = _stack.rbegin(); itr != _stack.rend(); itr++)
         {
-            StackElement elem = *itr;
-            
-            switch (elem.type())
-            {
-            case StackElement::Number:
-                strBuilder << "\t   " << elem.numberData() << endl;
-                break;
-            case StackElement::String:
-                strBuilder << "\t   \"" << elem.stringData() << "\"" << endl;
-                break;
-            case StackElement::Quotation:
-                strBuilder << "\t   ";
-                prettyFormatQuotationStackElement(elem, strBuilder);
-                strBuilder << endl;
-                break;
-            case StackElement::Boolean:
-                strBuilder << "\t   " << (elem.booleanData()).toString() << endl;
-                break;
-            default:
-                stringstream errBuilder;
-                errBuilder << "unexpected stack element type (" << elem.type() << ")" << endl;
-                throw ThrofException("Interpreter", errBuilder.str().c_str());
-            }
+            StackElement elem = (*itr);
+            strBuilder << "\t   ";
+            prettyFormatStackElement(elem, strBuilder);
+            strBuilder << endl;
         }
 
         strBuilder << endl;
@@ -547,28 +591,22 @@ namespace throf
         size_t numCompiledWords = _stringToWordDict.size() - STR_TO_PRIM_WORD_MAP.size();
 
         strBuilder << "Dictionary (compiled words: " << numCompiledWords << ") : " << endl << endl;
-        for (auto itr = _stringToWordDict.cbegin(); itr != _stringToWordDict.cend(); itr++)
+        for (auto itr = _stringToWordDict.begin(); itr != _stringToWordDict.end(); itr++)
         {
-            vector<Token>& toks = _dictionary[(*itr).second];
+            vector<StackElement>& stackElems = _dictionary[(*itr).second];
             strBuilder << "\t" << (*itr).first << " : ";
 
-            for (auto jtr = toks.cbegin(); jtr != toks.cend(); jtr++)
+            for (auto jtr = stackElems.cbegin(); jtr != stackElems.cend(); jtr++)
             {
-                if ((*jtr).getType() == Token::TokenType::StringLiteral)
-                {
-                    strBuilder << "\"" << (*jtr).getData() << "\" ";
-                }
-                else
-                {
-                    strBuilder << (*jtr).getData() << " ";
-                }
+                const StackElement& elem = *jtr;
+                prettyFormatStackElement(elem, strBuilder);
             }
 
             strBuilder << endl;
         }
 
         strBuilder << endl << "Variables (size: " << _variableDictionary.size() << "):" << endl << endl;
-        for (auto itr = _variableDictionary.cbegin(); itr != _variableDictionary.cend(); itr++) 
+        for (auto itr = _variableDictionary.begin(); itr != _variableDictionary.end(); itr++) 
         {
             strBuilder << "\t" << (*itr).first << " : ";
             const StackElement& elem = (*itr).second;

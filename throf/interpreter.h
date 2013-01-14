@@ -14,12 +14,17 @@ namespace throf
     
     // helper funcs
     private:
-        void dispatchWord(const std::string& s);
-        void processToken(const Token& tok);
-        void processDirective(Token& directive, Token& arg);
         void initialize();
-        void addWordToDictionary(const std::string& s, std::vector<Token> toks);
+        void dispatch(const StackElement& s);
+        void processDirective(Token& directive, Token& arg);
+        void processToken(Tokenizer& tokenizer, const Token& tok);
+        StackElement createStackElementFromToken( Tokenizer& tokenizer, const Token& tok);
+        void addWordToDictionary(Tokenizer& tokenizer, const std::string& s);
         std::string stackToString();
+
+        // pretty printers
+        void prettyFormatStackElement(const StackElement& elem, stringstream& strBuilder);
+        void prettyFormatQuotation(const StackElement& elem, stringstream& strBuilder);
 
         // convenience throwers
         void throwIfTypeUnexpected(const StackElement& element,
@@ -31,7 +36,7 @@ namespace throf
     // member vars
     private:
         typedef unordered_map<string, WORD_IDX> StringToWORDDictionary;
-        typedef unordered_map<WORD_IDX, std::vector<Token>> Dictionary;
+        typedef unordered_map<WORD_IDX, std::vector<StackElement>> Dictionary;
         typedef unordered_map<string, StackElement> VariableDictionary;
         Dictionary _dictionary;
         StringToWORDDictionary _stringToWordDict;

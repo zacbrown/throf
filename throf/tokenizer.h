@@ -29,7 +29,7 @@ namespace throf
                 stringstream strBuilder;
                 strBuilder << "fopen failed, errno = " << errno;
                 throw ThrofException("FileReader", strBuilder.str().c_str());
-            }            
+            }
             slurpFile(fileHandle);
         }
 

@@ -23,8 +23,10 @@ namespace throf
             string str = (*itr).first;
             PRIMITIVE_WORD prim = (*itr).second;
             _stringToWordDict[str] = prim;
-            _dictionary[prim] = vector<StackElement>();
+            _dictionary[prim] = vector<vector<StackElement>>();
         }
+
+        _stack.reserve(50);
     }
 
     void Interpreter::throwIfTypeUnexpected(const StackElement& element,
@@ -45,7 +47,7 @@ namespace throf
             case StackElement::Variable:
                 errBuilder << "\"" << element.stringData() << "\" (string literal)";
                 break;
-            case StackElement::Uninitialized:
+            case StackElement::Nil:
             default:
                 errBuilder << "uninitialized (??)";
                 break;
@@ -55,7 +57,17 @@ namespace throf
         }
     }
 
-    void Interpreter::dispatch(const StackElement& elem)
+    void Interpreter::throwIfVariableNotDefined(const StackElement& element, const string msg) const
+    {
+        if (!contains(_stringToWordDict, element.stringData()))
+        {
+            stringstream strBuilder;
+            strBuilder << msg << " : type " << element.type() << ", data '" << element.stringData() << "'";
+            throw ThrofException("Interpreter", strBuilder.str(), _filename);
+        }
+    }
+
+    void Interpreter::dispatch(const StackElement elem)
     {
         string& filename = _filename;
         switch (elem.type())
@@ -73,9 +85,9 @@ namespace throf
             throw ThrofException("Interpreter", "Unexpected uninitialized StackElement.", _filename);
         }
 
-        WORD_IDX idx = elem.wordRefIdx();
+        WORD_ID id = elem.wordRefId();
 
-        auto dispatch_arithmetic = [filename](WORD_IDX operation, const StackElement& top, const StackElement& bottom)
+        auto dispatch_arithmetic = [filename](WORD_ID operation, const StackElement& top, const StackElement& bottom)
         {
             switch (operation)
             {
@@ -96,7 +108,7 @@ namespace throf
             throw ThrofException("Interpreter", strBuilder.str(), filename);
         };
 
-        auto dispatch_comparison = [filename](WORD_IDX operation, const StackElement& top, const StackElement& bottom)
+        auto dispatch_comparison = [filename](WORD_ID operation, const StackElement& top, const StackElement& bottom)
         {
             switch(operation)
             {
@@ -115,7 +127,7 @@ namespace throf
             throw ThrofException("Interpreter", strBuilder.str(), filename);
         };
 
-        switch(idx)
+        switch(id)
         {
         case PRIM_CLS:
             _stack.clear();
@@ -166,7 +178,9 @@ namespace throf
                 StackElement value = _stack.back(); _stack.pop_back();
 
                 throwIfTypeUnexpected(variableName, StackElement::Variable, "unexpected variable name ");
-                _variableDictionary[variableName.stringData()] = value;
+                throwIfVariableNotDefined(variableName, "variable not defined ");
+                _dictionary[_stringToWordDict[variableName.stringData()]].back()[0] = value;
+                //_variableDictionary[variableName.stringData()] = value;
             }
             break;
         case PRIM_GET:
@@ -174,7 +188,12 @@ namespace throf
                 StackElement variableName = _stack.back(); _stack.pop_back();
                 throwIfTypeUnexpected(variableName, StackElement::Variable, "unexpected variable name ");
 
-                _stack.emplace_back(_variableDictionary[variableName.stringData()]);
+                throwIfTypeUnexpected(variableName, StackElement::Variable, "unexpected variable name ");
+                throwIfVariableNotDefined(variableName, "variable not defined ");
+
+                StackElement data = _dictionary[_stringToWordDict[variableName.stringData()]].back().back();
+                _stack.emplace_back(data);
+                //_stack.emplace_back(_variableDictionary[variableName.stringData()]);
             }
             break;
         case PRIM_ROT:
@@ -205,11 +224,11 @@ namespace throf
                 }
 
                 auto itr = _stack.end(); itr--;
-                int idx = 0;
-                while (idx < elemIndex.numberData() && itr != _stack.begin())
+                int id = 0;
+                while (id < elemIndex.numberData() && itr != _stack.begin())
                 {
                     itr--;
-                    idx++;
+                    id++;
                 }
                 StackElement elem = *itr;
                 _stack.emplace_back(elem);
@@ -225,7 +244,7 @@ namespace throf
                 StackElement bottom = _stack.back(); _stack.pop_back();
                 throwIfTypeUnexpected(top, StackElement::Number, "expected number, got : ");
                 throwIfTypeUnexpected(bottom, StackElement::Number, "expected number, got : ");
-                _stack.emplace_back(StackElement(StackElement::Number, dispatch_arithmetic(idx, top, bottom)));
+                _stack.emplace_back(StackElement(StackElement::Number, dispatch_arithmetic(id, top, bottom)));
             }
             break;
         case PRIM_LT:
@@ -238,7 +257,7 @@ namespace throf
                 throwIfTypeUnexpected(top, StackElement::Number, "expected number, got : ");
                 throwIfTypeUnexpected(bottom, StackElement::Number, "expected number, got : ");
                 _stack.emplace_back(StackElement(StackElement::Boolean,
-                    StackElement::BooleanType(dispatch_comparison(idx, top, bottom))));
+                    StackElement::BooleanType(dispatch_comparison(id, top, bottom))));
             }
             break;
         case PRIM_EQ:
@@ -250,7 +269,7 @@ namespace throf
                 if (top.type() != bottom.type())
                 {
                     stringstream strBuilder;
-                    strBuilder << "unexpected mismatch of types on stack when excuting " << PRIM_WORD_TO_STR_MAP.at(idx);
+                    strBuilder << "unexpected mismatch of types on stack when excuting " << PRIM_WORD_TO_STR_MAP.at(id);
                     strBuilder << " : " << top.type() << " <> " << bottom.type();
                     throw ThrofException("Interpreter", strBuilder.str(), _filename);
                 }
@@ -275,7 +294,7 @@ namespace throf
                     }
                 }
                 // change the return value if necessary
-                if (PRIM_NEQ == idx)
+                if (PRIM_NEQ == id)
                 {
                     ret = !ret;
                 }
@@ -301,7 +320,7 @@ namespace throf
                 throwIfTypeUnexpected(bottom, StackElement::Boolean, "expected boolean, got : ");
 
                 bool ret = false;
-                switch (idx)
+                switch (id)
                 {
                 case PRIM_AND:
                     ret = top.booleanData() && bottom.booleanData();
@@ -321,20 +340,21 @@ namespace throf
             
         default:
             // Non-core word used
-            auto def = _dictionary[idx];
+            auto def = _dictionary[elem.wordRefId()][elem.wordRefCurrentOffset()];
             for (auto itr = def.begin(); itr != def.end(); itr++)
             {
-                StackElement& elem = *itr;
-                switch(elem.type())
+                const StackElement& innerElem = *itr;
+                switch(innerElem.type())
                 {
                 case StackElement::Boolean:
                 case StackElement::Number:
                 case StackElement::String:
+                case StackElement::Variable:
                 case StackElement::Quotation:
-                    _stack.emplace_back(StackElement(elem));
+                    _stack.emplace_back(StackElement(innerElem));
                     break;
                 case StackElement::WordReference:
-                    dispatch(elem);
+                    dispatch(innerElem);
                     break;
                 }
             }
@@ -383,12 +403,14 @@ namespace throf
         }
         else if (contains(_stringToWordDict, tok.getData()))
         {
-            WORD_IDX idx = _stringToWordDict[tok.getData()];
-            return StackElement(StackElement::WordReference, idx, tok.getData());
-        }
-        else if (contains(_variableDictionary, tok.getData()))
-        {
-            return StackElement(StackElement::ElementType::Variable, tok.getData());
+            if (contains(_variablesInScope, tok.getData()))
+            {
+                return StackElement(StackElement::ElementType::Variable, tok.getData());
+            }
+
+            WORD_ID id = _stringToWordDict[tok.getData()];
+            size_t currentScopeWordDef = _dictionary[id].size() == 0 ? 0 : _dictionary[id].size() - 1;
+            return StackElement(StackElement::WordReference, tok.getData(), id, currentScopeWordDef);
         }
         else
         {
@@ -400,10 +422,23 @@ namespace throf
 
     void Interpreter::addWordToDictionary(Tokenizer& tokenizer, const string& s)
     {
-        WORD_IDX idx = _stringToWordDict[s] = _stringToWordDict.size() + 1;
+        WORD_ID id;
+        if (contains(_stringToWordDict, s))
+        {
+            id = _stringToWordDict[s];
+        }
+        else
+        {
+            id = (_stringToWordDict[s] = _stringToWordDict.size() + 1);
+            if (contains(_variablesInScope, s))
+            {
+                _variablesInScope.erase(s);
+            }
+        }
+        
         vector<StackElement> ret;
-
         Token tok = tokenizer.getNextToken();
+
         while (tok.getType() != Token::DefinitionTerminator)
         {
             ret.emplace_back(createStackElementFromToken(tokenizer, tok));
@@ -421,7 +456,7 @@ namespace throf
             }
         }
 
-        _dictionary[idx] = ret;
+        _dictionary[id].emplace_back(ret);
     }
 
     void Interpreter::processToken(Tokenizer& tokenizer, const Token& tok)
@@ -444,18 +479,34 @@ namespace throf
 
     void Interpreter::processDirective(Token& directive, Token& arg)
     {
-        WORD_IDX directiveIdx = _stringToWordDict[directive.getData()];
-        switch(directiveIdx)
+        const string& data = arg.getData();
+        WORD_ID directiveId = _stringToWordDict[directive.getData()];
+        switch(directiveId)
         {
         case PRIM_INCLUDE:
             {
-                FileReader reader(arg.getData());
+                FileReader reader(data);
                 Tokenizer tokenizer = Tokenizer::tokenize(reader);
                 loadFile(tokenizer);
             }
             break;
         case PRIM_VARIABLE:
-            _variableDictionary[arg.getData()] = StackElement();
+            //_variableDictionary[data] = StackElement();
+            {
+                WORD_ID id;
+                if (contains(_stringToWordDict, data))
+                {
+                    id = _stringToWordDict[data];
+                }
+                else
+                {
+                    id = _stringToWordDict[data] = _stringToWordDict.size() + 1;
+                }
+                vector<StackElement> newVal;
+                newVal.emplace_back(StackElement());
+                _dictionary[id].emplace_back(newVal);
+                _variablesInScope.insert(data);
+            }
             break;
         default:
             stringstream strBuilder;
@@ -542,11 +593,23 @@ namespace throf
             break;
         case StackElement::WordReference:
             {
-                vector<StackElement>& wordDef = _dictionary[elem.wordRefIdx()];
-                for (auto itr = wordDef.begin(); itr != wordDef.end(); itr++)
+                if (_dictionary[elem.wordRefId()].size() > 0)
                 {
-                    prettyFormatStackElement(*itr, strBuilder);
+                    vector<StackElement>& wordDef = _dictionary[elem.wordRefId()][elem.wordRefCurrentOffset()];
+                    for (auto itr = wordDef.begin(); itr != wordDef.end(); itr++)
+                    {
+                        prettyFormatStackElement(*itr, strBuilder);
+                    }
                 }
+                else
+                {
+                    strBuilder << elem.wordName();
+                }
+            }
+            break;
+        case StackElement::Nil:
+            {
+                strBuilder << "nil ";
             }
             break;
         default:
@@ -560,10 +623,12 @@ namespace throf
     void Interpreter::prettyFormatQuotation(const StackElement& elem, stringstream& strBuilder)
     {
         vector<StackElement> elements = elem.quotationData();
+        strBuilder << "[ ";
         for (size_t ii = 0; ii < elements.size(); ii++)
         {
             prettyFormatStackElement(elements[ii], strBuilder);
         }
+        strBuilder << "] ";
     }
 
     string Interpreter::stackToString()
@@ -593,44 +658,23 @@ namespace throf
         strBuilder << "Dictionary (compiled words: " << numCompiledWords << ") : " << endl << endl;
         for (auto itr = _stringToWordDict.begin(); itr != _stringToWordDict.end(); itr++)
         {
-            vector<StackElement>& stackElems = _dictionary[(*itr).second];
-            strBuilder << "\t" << (*itr).first << " : ";
-
-            for (auto jtr = stackElems.cbegin(); jtr != stackElems.cend(); jtr++)
+            if (_dictionary[(*itr).second].size() > 0)
             {
-                const StackElement& elem = *jtr;
-                prettyFormatStackElement(elem, strBuilder);
+                vector<StackElement>& stackElems = _dictionary[(*itr).second].back();
+                strBuilder << "\t" << (*itr).first << " : ";
+
+                for (auto jtr = stackElems.cbegin(); jtr != stackElems.cend(); jtr++)
+                {
+                    const StackElement& elem = *jtr;
+                    prettyFormatStackElement(elem, strBuilder);
+                }
+            }
+            else
+            {
+                strBuilder << "\t" << (*itr).first << " : machine primitive";
             }
 
             strBuilder << endl;
-        }
-
-        strBuilder << endl << "Variables (size: " << _variableDictionary.size() << "):" << endl << endl;
-        for (auto itr = _variableDictionary.begin(); itr != _variableDictionary.end(); itr++) 
-        {
-            strBuilder << "\t" << (*itr).first << " : ";
-            const StackElement& elem = (*itr).second;
-            switch (elem.type())
-            {
-            case StackElement::Uninitialized:
-                strBuilder << "uninitialized" << endl;
-                break;
-            case StackElement::Number:
-                strBuilder << elem.numberData() << endl;
-                break;
-            case StackElement::String:
-                strBuilder << elem.stringData() << endl;
-                break;
-            case StackElement::Boolean:
-                strBuilder << "\t   " << (elem.booleanData()).toString() << endl;
-                break;
-            default:
-                {
-                    stringstream errBuilder;
-                    errBuilder << "unexpected StackElement type : " << elem.type();
-                    throw ThrofException("Interpreter", errBuilder.str(), _filename);
-                }
-            }
         }
 
         strBuilder << endl << stackToString();

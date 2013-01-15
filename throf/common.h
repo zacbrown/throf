@@ -8,7 +8,7 @@ namespace throf
 {
     using namespace std;
 
-    typedef int WORD_IDX;
+    typedef int WORD_ID;
     typedef int PRIMITIVE_WORD;
 
 #define op_code(e, val, str) \
@@ -23,8 +23,8 @@ namespace throf
     op_code(TWOSWAP, 3, "2swap");
     op_code(INCLUDE, 4, ":include");
     op_code(VARIABLE, 5, ":variable");
-    op_code(SET, 6, "set!");
-    op_code(GET, 7, "get");
+    op_code(SET, 6, "!");
+    op_code(GET, 7, "@");
     op_code(ROT, 8, "rot");
     op_code(NROT, 9, "-rot");
     op_code(PICK, 10, "pick");

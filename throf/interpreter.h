@@ -15,7 +15,7 @@ namespace throf
     // helper funcs
     private:
         void initialize();
-        void dispatch(const StackElement& s);
+        void dispatch(const StackElement elem);
         void processDirective(Token& directive, Token& arg);
         void processToken(Tokenizer& tokenizer, const Token& tok);
         StackElement createStackElementFromToken( Tokenizer& tokenizer, const Token& tok);
@@ -30,17 +30,18 @@ namespace throf
         void throwIfTypeUnexpected(const StackElement& element,
             StackElement::ElementType expected, const string msg) const;
 
+        void throwIfVariableNotDefined(const StackElement& element, const string msg) const;
+
         // block assignment
         Interpreter& operator=(Interpreter& right) { return right; }
 
     // member vars
     private:
-        typedef unordered_map<string, WORD_IDX> StringToWORDDictionary;
-        typedef unordered_map<WORD_IDX, std::vector<StackElement>> Dictionary;
-        typedef unordered_map<string, StackElement> VariableDictionary;
+        typedef unordered_map<string, WORD_ID> StringToWORDDictionary;
+        typedef unordered_map<WORD_ID, std::vector<std::vector<StackElement>>> Dictionary;
         Dictionary _dictionary;
         StringToWORDDictionary _stringToWordDict;
-        VariableDictionary _variableDictionary;
+        unordered_set<string> _variablesInScope;
         std::vector<StackElement> _stack;
         std::string _filename;
     };

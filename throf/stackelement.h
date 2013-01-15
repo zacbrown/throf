@@ -7,7 +7,7 @@ namespace throf
     public:
         enum ElementType
         {
-            Uninitialized,
+            Nil,
             Variable,
             String,
             Number,
@@ -29,7 +29,8 @@ namespace throf
         };
 
     private:
-        WORD_IDX _dataWordRefIdx;
+        size_t _dataWordRefCurrentOffset;
+        WORD_ID _dataWordRefId;
         std::string _wordName;
         long _dataNumber;
         std::string _dataString;
@@ -38,124 +39,39 @@ namespace throf
         ElementType _type;
 
         // helper func
-        void CopyObj(const StackElement& other)
-        {
-            this->_dataNumber = other._dataNumber;
-            this->_dataString = other._dataString;
-            this->_dataQuotation = other._dataQuotation;
-            this->_dataBoolean = other._dataBoolean;
-            this->_dataWordRefIdx = other._dataWordRefIdx;
-            this->_wordName = other._wordName;
-            this->_type = other._type;
-        }
+        void CopyObj(const StackElement& other);
 
-    public:        
-        const std::string& stringData() const
-        {
-            return _dataString;
-        }
+    public:
+        const std::string& stringData() const;
 
-        const long& numberData() const
-        {
-            return _dataNumber;
-        }
+        const long& numberData() const;
 
-        const std::vector<StackElement>& quotationData() const
-        {
-            return _dataQuotation;
-        }
+        const std::vector<StackElement>& quotationData() const;
 
-        BooleanType booleanData() const
-        {
-            return _dataBoolean;
-        }
+        BooleanType booleanData() const;
 
-        const WORD_IDX wordRefIdx() const
-        {
-            return _dataWordRefIdx;
-        }
+        const size_t wordRefCurrentOffset() const;
 
-        const std::string& wordName() const
-        {
-            if (_type == WordReference)
-            {
-                return _wordName;
-            }
+        const WORD_ID wordRefId() const;
 
-            stringstream strBuilder;
-            strBuilder << "StackElement is not of type WordReference, type = " << _type << ".";
-            throw ThrofException("StackElement", strBuilder.str());
-        }
+        const std::string& wordName() const;
 
-        const ElementType type() const
-        {
-            return _type;
-        }
+        const ElementType type() const;
 
-        StackElement() :
-            _type(ElementType::Uninitialized),
-            _dataNumber(0xdeadbeef),
-            _dataString(""),
-            _dataWordRefIdx(0xdeadbeef),
-            _dataBoolean(false),
-            _wordName("")
-        { }
+        StackElement();
 
-        explicit StackElement(const ElementType type, long val) :
-            _type(type),
-            _dataNumber(val),
-            _dataString(""),
-            _dataBoolean(val != 0),
-            _dataWordRefIdx(0xdeadbeef),
-            _wordName("")
-        { }
+        explicit StackElement(const ElementType type, long val);
 
-        explicit StackElement(const ElementType type, std::string val) :
-            _type(type),
-            _dataNumber(0xdeadbeef),
-            _dataString(val),
-            _dataBoolean(val != ""),
-            _dataWordRefIdx(0xdeadbeef),
-            _wordName("")
-        { }
+        explicit StackElement(const ElementType type, std::string val);
 
-        explicit StackElement(const ElementType type, std::vector<StackElement> val) :
-            _type(type),
-            _dataNumber(0xdeadbeef),
-            _dataString(""),
-            _dataBoolean(val.size() != 0),
-            _dataWordRefIdx(0xdeadbeef),
-            _dataQuotation(val),
-            _wordName("")
-        { }
+        explicit StackElement(const ElementType type, std::vector<StackElement> val);
 
-        explicit StackElement(const ElementType type, BooleanType val) :
-            _type(type),
-            _dataNumber(0xdeadbeef),
-            _dataString(""),
-            _dataBoolean(val), 
-            _dataWordRefIdx(0xdeadbeef),
-            _wordName("")
-        { }
+        explicit StackElement(const ElementType type, BooleanType val);
 
-        explicit StackElement(const ElementType type, WORD_IDX val, const std::string wordName) :
-            _type(type),
-            _dataNumber(0xdeadbeef),
-            _dataString(""),
-            _dataBoolean(true),
-            _dataWordRefIdx(val),
-            _wordName(wordName)
-        { }
+        explicit StackElement(const ElementType type, const std::string wordName, WORD_ID wordIdx, size_t definitionIndex);
 
-        StackElement(const StackElement& other)
-        {
-            CopyObj(other);
-        }
+        StackElement(const StackElement& other);
 
-        StackElement& operator=(const StackElement& right)
-        {
-            CopyObj(right);
-            return *this;
-        }
+        StackElement& operator=(const StackElement& right);
     };
 }

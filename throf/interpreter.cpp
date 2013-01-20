@@ -603,7 +603,7 @@ namespace throf
                 }
                 else
                 {
-                    strBuilder << elem.wordName();
+                    strBuilder << elem.wordName() << " ";
                 }
             }
             break;

@@ -10,10 +10,12 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <regex.h>
+
 #define UNREFERENCED_PARAMETER(e) e
 
-#if ((__GNUC__ <= 4) && (__GNUC_MINOR__ < 6))
-#define nullptr NULL
+#if ((__GNUC__ <= 4) && (__GNUC_MINOR__ < 7))
+#error GCC version must be 4.7 or higher.
 #endif
 
 #endif

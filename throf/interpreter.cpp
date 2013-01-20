@@ -592,20 +592,7 @@ namespace throf
             prettyFormatQuotation(elem, strBuilder);
             break;
         case StackElement::WordReference:
-            {
-                if (_dictionary[elem.wordRefId()].size() > 0)
-                {
-                    vector<StackElement>& wordDef = _dictionary[elem.wordRefId()][elem.wordRefCurrentOffset()];
-                    for (auto itr = wordDef.begin(); itr != wordDef.end(); itr++)
-                    {
-                        prettyFormatStackElement(*itr, strBuilder);
-                    }
-                }
-                else
-                {
-                    strBuilder << elem.wordName() << " ";
-                }
-            }
+            strBuilder << elem.wordName() << " ";
             break;
         case StackElement::Nil:
             {

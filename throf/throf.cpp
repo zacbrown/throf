@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
             interpreter.loadFile(tokenizer);
             interpreter.dumpInterpreterState();
         }
-        catch (ThrofException& e)
+        catch (const ThrofException& e)
         {
             printError("Error encountered while processing file '%s'", filename.c_str());
             printError("\t filename: %s", e.filename());
@@ -53,5 +53,6 @@ int main(int argc, char* argv[])
             printError("\t explanation: %s", e.what());
         }
     }
+
     return 0;
 }

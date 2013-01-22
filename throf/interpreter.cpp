@@ -362,19 +362,33 @@ namespace throf
         }
     }
 
+    inline bool parse_number(const std::string& s, int& retParsedInt)
+    {
+        try
+        {
+            retParsedInt = std::stoi(s);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
     StackElement Interpreter::createStackElementFromToken(Tokenizer& tokenizer, const Token& tok)
     {
+        int numVal;
+        bool isNum = parse_number(tok.getData(), numVal);
         bool isTrueToken = (0 == tok.getData().compare("true"));
         if (isTrueToken || 0 == tok.getData().compare("false"))
         {
             return StackElement(StackElement::Boolean,
                 StackElement::BooleanType(isTrueToken));
         }
-        else if (is_number(tok.getData()))
+        else if (isNum)
         {
             // ohai, it's a number
-            return StackElement(StackElement::Number,
-                parse_number(tok.getData()));
+            return StackElement(StackElement::Number, numVal);
         }
         else if (tok.getType() == Token::TokenType::StringLiteral)
         {

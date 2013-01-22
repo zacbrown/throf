@@ -8,37 +8,6 @@ namespace throf
 {
     using namespace std;
 
-    struct CommonGlobalStaticInitializer
-    {
-    private: // initialize helpers
-#if _WIN32
-        void initializeIsNumberRegex() { }
-#else
-        void initializeIsNumberRegex()
-        {
-            static const char* pattern = "-?[[:digit:]]+";
-
-            int status = regcomp(&is_number_regex, pattern, REG_EXTENDED | REG_NOSUB);
-            if (status)
-            {
-                stringstream strBuilder;
-                strBuilder << "Failed to compile regular expression, regcomp returned " << status;   
-                throw ThrofException("Common", strBuilder.str());
-            }
-
-        }
-
-    public: // resources needed
-        regex_t is_number_regex;
-#endif
-
-    public:
-        CommonGlobalStaticInitializer()
-        {
-            initializeIsNumberRegex();
-        }
-    };
-
     typedef int WORD_ID;
     typedef int PRIMITIVE_WORD;
 
@@ -155,7 +124,4 @@ namespace throf
     { 
         return map.find(val) != map.end();
     }
-
-    bool is_number(const std::string& s);
-    int parse_number(const std::string& s);
 }

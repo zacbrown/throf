@@ -18,7 +18,7 @@ namespace throf
         _type(ElementType::Nil),
         _dataNumber(0xdeadbeef),
         _dataString(""),
-        _dataWordRefCurrentOffset(0),
+        _dataWordRefCurrentOffset(-1),
         _dataWordRefId(0xdeadbeef),
         _dataBoolean(false),
         _wordName("")
@@ -29,7 +29,7 @@ namespace throf
         _dataNumber(val),
         _dataString(""),
         _dataBoolean(val != 0),
-        _dataWordRefCurrentOffset(0),
+        _dataWordRefCurrentOffset(-1),
         _dataWordRefId(0xdeadbeef),
         _wordName("")
     { }
@@ -39,7 +39,7 @@ namespace throf
         _dataNumber(0xdeadbeef),
         _dataString(val),
         _dataBoolean(val != ""),
-        _dataWordRefCurrentOffset(0),
+        _dataWordRefCurrentOffset(-1),
         _dataWordRefId(0xdeadbeef),
         _wordName("")
     { }
@@ -49,7 +49,7 @@ namespace throf
         _dataNumber(0xdeadbeef),
         _dataString(""),
         _dataBoolean(val.size() != 0),
-        _dataWordRefCurrentOffset(0),
+        _dataWordRefCurrentOffset(-1),
         _dataWordRefId(0xdeadbeef),
         _dataQuotation(val),
         _wordName("")
@@ -60,12 +60,12 @@ namespace throf
         _dataNumber(0xdeadbeef),
         _dataString(""),
         _dataBoolean(val), 
-        _dataWordRefCurrentOffset(0),
+        _dataWordRefCurrentOffset(-1),
         _dataWordRefId(0xdeadbeef),
         _wordName("")
     { }
 
-    StackElement::StackElement(const ElementType type, const string wordName, WORD_ID wordIdx, size_t definitionIndex) :
+    StackElement::StackElement(const ElementType type, const string wordName, WORD_ID wordIdx, int definitionIndex) :
         _type(type),
         _dataNumber(0xdeadbeef),
         _dataString(""),
@@ -106,7 +106,7 @@ namespace throf
         return _dataBoolean;
     }
 
-    const size_t StackElement::wordRefCurrentOffset() const
+    const int StackElement::wordRefCurrentOffset() const
     {
         if (_type == WordReference)
         {

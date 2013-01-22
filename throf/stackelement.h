@@ -29,7 +29,7 @@ namespace throf
         };
 
     private:
-        size_t _dataWordRefCurrentOffset;
+        int _dataWordRefCurrentOffset;
         WORD_ID _dataWordRefId;
         std::string _wordName;
         long _dataNumber;
@@ -50,7 +50,7 @@ namespace throf
 
         BooleanType booleanData() const;
 
-        const size_t wordRefCurrentOffset() const;
+        const int wordRefCurrentOffset() const;
 
         const WORD_ID wordRefId() const;
 
@@ -68,7 +68,7 @@ namespace throf
 
         explicit StackElement(const ElementType type, BooleanType val);
 
-        explicit StackElement(const ElementType type, const std::string wordName, WORD_ID wordIdx, size_t definitionIndex);
+        explicit StackElement(const ElementType type, const std::string wordName, WORD_ID wordIdx, int definitionIndex);
 
         StackElement(const StackElement& other);
 

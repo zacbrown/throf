@@ -423,7 +423,7 @@ namespace throf
             }
 
             WORD_ID id = _stringToWordDict[tok.getData()];
-            size_t currentScopeWordDef = _dictionary[id].size() == 0 ? 0 : _dictionary[id].size() - 1;
+            int currentScopeWordDef = _dictionary[id].size() == 0 ? 0 : _dictionary[id].size() - 1;
             return StackElement(StackElement::WordReference, tok.getData(), id, currentScopeWordDef);
         }
         else
@@ -436,20 +436,6 @@ namespace throf
 
     void Interpreter::addWordToDictionary(Tokenizer& tokenizer, const string& s)
     {
-        WORD_ID id;
-        if (contains(_stringToWordDict, s))
-        {
-            id = _stringToWordDict[s];
-        }
-        else
-        {
-            id = (_stringToWordDict[s] = _stringToWordDict.size() + 1);
-            if (contains(_variablesInScope, s))
-            {
-                _variablesInScope.erase(s);
-            }
-        }
-        
         vector<StackElement> ret;
         Token tok = tokenizer.getNextToken();
 
@@ -467,6 +453,20 @@ namespace throf
                 errBuilder << "word definition terminator (' ; ') expected at end of word '";
                 errBuilder << s << "'";
                 throw ThrofException("Interpreter", errBuilder.str(), tokenizer.filename());
+            }
+        }
+
+        WORD_ID id;
+        if (contains(_stringToWordDict, s))
+        {
+            id = _stringToWordDict[s];
+        }
+        else
+        {
+            id = (_stringToWordDict[s] = _stringToWordDict.size() + 1);
+            if (contains(_variablesInScope, s))
+            {
+                _variablesInScope.erase(s);
             }
         }
 

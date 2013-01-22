@@ -102,7 +102,6 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="common.cpp" />
     <ClCompile Include="interpreter.cpp" />
     <ClCompile Include="stackelement.cpp" />
     <ClCompile Include="tokenizer.cpp" />

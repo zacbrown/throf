@@ -506,6 +506,23 @@ namespace throf
     {
         const string& data = arg.getData();
         WORD_ID directiveId = _stringToWordDict[directive.getData()];
+
+        auto addDeferralOrVariable = [data](StringToWORDDictionary& strDict, Dictionary& dict) -> void
+        {
+            WORD_ID id;
+            if (contains(strDict, data))
+            {
+                id = strDict[data];
+            }
+            else
+            {
+                id = strDict[data] = strDict.size() + 1;
+            }
+            vector<StackElement> newVal;
+            newVal.emplace_back(StackElement());
+            dict[id].emplace_back(newVal);
+        };
+
         switch(directiveId)
         {
         case PRIM_INCLUDE:
@@ -516,38 +533,12 @@ namespace throf
             }
             break;
         case PRIM_DEFER:
-            {
-                WORD_ID id;
-                if (contains(_stringToWordDict, data))
-                {
-                    id = _stringToWordDict[data];
-                }
-                else
-                {
-                    id = _stringToWordDict[data] = _stringToWordDict.size() + 1;
-                }
-                vector<StackElement> newVal;
-                newVal.emplace_back(StackElement());
-                _dictionary[id].emplace_back(newVal);
-                _deferredWords.insert(data);
-            }
+            addDeferralOrVariable(_stringToWordDict, _dictionary);
+            _deferredWords.insert(data);
             break;
         case PRIM_VARIABLE:
-            {
-                WORD_ID id;
-                if (contains(_stringToWordDict, data))
-                {
-                    id = _stringToWordDict[data];
-                }
-                else
-                {
-                    id = _stringToWordDict[data] = _stringToWordDict.size() + 1;
-                }
-                vector<StackElement> newVal;
-                newVal.emplace_back(StackElement());
-                _dictionary[id].emplace_back(newVal);
-                _variablesInScope.insert(data);
-            }
+            addDeferralOrVariable(_stringToWordDict, _dictionary);
+            _variablesInScope.insert(data);
             break;
         default:
             stringstream strBuilder;

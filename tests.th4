@@ -53,12 +53,12 @@ test_when
         ] [ "2dup failed" ] if ;
 
 : test_2drop 
-    1 2 3 2drop 1 == [ "2drop passed" ] [ "2drop failed" ] if ;
+    -666 -667 -668 2drop -666 == [ "2drop passed" ] [ "2drop failed" ] if ;
 
 : test_2over
-    1 2 3 4 2over
-    2 == [
-        1 == [ "2over passed" ] [ "2over failed" ] if
+    666 667 668 669 2over
+    667 == [
+        666 == [ "2over passed" ] [ "2over failed" ] if
         ] [ "2over failed" ] if ;
 
 
@@ -107,3 +107,12 @@ test_abs
              ] [ "hyperstatic env failed" ] if ;
 
 test_hyperstatic_env
+
+#: gcd   ?dup if swap over mod recurse then ;
+
+:defer gcd
+
+: gcd ( a b -- gcd ) dup dup 0 == [ 2drop ] [ -rot mod gcd ] if ;
+: test_defer 32 40 gcd 8 == [ "defer passed" ] [ "defer failed" ] if ;
+
+test_defer

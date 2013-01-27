@@ -43,6 +43,7 @@ namespace throf
     op_code(AND, 23, "and");
     op_code(OR, 24, "or");
     op_code(XOR, 25, "xor");
+    op_code(DEFER, 26, ":defer");
 
 
 #undef op_code
@@ -78,6 +79,7 @@ namespace throf
         ret[PRIM_AND_STR]       = PRIM_AND      ;
         ret[PRIM_OR_STR]        = PRIM_OR       ;
         ret[PRIM_XOR_STR]       = PRIM_XOR      ;
+        ret[PRIM_DEFER_STR]     = PRIM_DEFER    ;
 
         return ret;
     }
@@ -113,6 +115,7 @@ namespace throf
         ret[PRIM_AND]       = PRIM_AND_STR      ;
         ret[PRIM_OR]        = PRIM_OR_STR       ;
         ret[PRIM_XOR]       = PRIM_XOR_STR      ;
+        ret[PRIM_DEFER]     = PRIM_DEFER_STR    ;
         return ret;
     }
 

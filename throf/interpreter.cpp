@@ -26,7 +26,7 @@ namespace throf
             _dictionary[prim] = vector<vector<StackElement>>();
         }
 
-        _stack.reserve(50);
+        _stack.reserve(200);
     }
 
     void Interpreter::throwIfTypeUnexpected(const StackElement& element,
@@ -180,7 +180,6 @@ namespace throf
                 throwIfTypeUnexpected(variableName, StackElement::Variable, "unexpected variable name ");
                 throwIfVariableNotDefined(variableName, "variable not defined ");
                 _dictionary[_stringToWordDict[variableName.stringData()]].back()[0] = value;
-                //_variableDictionary[variableName.stringData()] = value;
             }
             break;
         case PRIM_GET:
@@ -193,7 +192,6 @@ namespace throf
 
                 StackElement data = _dictionary[_stringToWordDict[variableName.stringData()]].back().back();
                 _stack.emplace_back(data);
-                //_stack.emplace_back(_variableDictionary[variableName.stringData()]);
             }
             break;
         case PRIM_ROT:
@@ -366,7 +364,12 @@ namespace throf
     {
         try
         {
-            retParsedInt = std::stoi(s);
+            size_t pos = 0;
+            retParsedInt = std::stoi(s, &pos);
+            if (pos != s.size())
+            {
+                return false;
+            }
             return true;
         }
         catch (...)
@@ -470,7 +473,15 @@ namespace throf
             }
         }
 
-        _dictionary[id].emplace_back(ret);
+        if (contains(_deferredWords, s))
+        {
+            _dictionary[id].back() = ret;
+            _deferredWords.erase(s);
+        }
+        else
+        {
+            _dictionary[id].emplace_back(ret);
+        }
     }
 
     void Interpreter::processToken(Tokenizer& tokenizer, const Token& tok)
@@ -504,8 +515,24 @@ namespace throf
                 loadFile(tokenizer);
             }
             break;
+        case PRIM_DEFER:
+            {
+                WORD_ID id;
+                if (contains(_stringToWordDict, data))
+                {
+                    id = _stringToWordDict[data];
+                }
+                else
+                {
+                    id = _stringToWordDict[data] = _stringToWordDict.size() + 1;
+                }
+                vector<StackElement> newVal;
+                newVal.emplace_back(StackElement());
+                _dictionary[id].emplace_back(newVal);
+                _deferredWords.insert(data);
+            }
+            break;
         case PRIM_VARIABLE:
-            //_variableDictionary[data] = StackElement();
             {
                 WORD_ID id;
                 if (contains(_stringToWordDict, data))

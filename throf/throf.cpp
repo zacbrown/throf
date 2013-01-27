@@ -23,7 +23,6 @@ void loadInitFile(Interpreter& interpreter)
         FileReader reader(INIT_FILENAME);
         Tokenizer tokenizer = Tokenizer::tokenize(reader);
         interpreter.loadFile(tokenizer);
-
     }
 }
 

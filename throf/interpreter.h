@@ -42,6 +42,7 @@ namespace throf
         Dictionary _dictionary;
         StringToWORDDictionary _stringToWordDict;
         unordered_set<string> _variablesInScope;
+        unordered_set<string> _deferredWords;
         std::vector<StackElement> _stack;
         std::string _filename;
     };

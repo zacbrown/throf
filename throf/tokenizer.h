@@ -10,6 +10,7 @@ namespace throf
 
         void slurpFile(FILE* fileHandle)
         {
+            _buffer.reserve(2000);
             int c = fgetc(fileHandle);
             while (c != EOF)
             {

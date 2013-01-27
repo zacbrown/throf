@@ -111,8 +111,7 @@ test_hyperstatic_env
 #: gcd   ?dup if swap over mod recurse then ;
 
 :defer gcd
-
-: gcd ( a b -- gcd ) dup dup 0 == [ 2drop ] [ -rot mod gcd ] if ;
+: gcd ?dup [ swap over mod gcd ] when ;
 : test_defer 32 40 gcd 8 == [ "defer passed" ] [ "defer failed" ] if ;
 
 test_defer

@@ -47,7 +47,7 @@ namespace throf
         {
             DWORD dwNumCharsRead = 0;
             static const DWORD BUFFER_SIZE = 4096;
-            char* chars = new char[BUFFER_SIZE + 1];
+            char* const chars = new char[BUFFER_SIZE + 1];
             ThrofException::throwIfTrue(nullptr == chars, "REPL", "Unexpected error dynamically allocating character array.");
             unique_ptr<char[]> spCharBuffer(chars);
 

@@ -115,3 +115,6 @@ test_hyperstatic_env
 : test_defer 32 40 gcd 8 == [ "defer passed" ] [ "defer failed" ] if ;
 
 test_defer
+
+words
+stack

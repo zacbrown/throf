@@ -14,7 +14,8 @@ namespace throf
 #define op_code(e, val, str) \
     const PRIMITIVE_WORD PRIM_ ## e = val; \
     const char* const PRIM_ ## e ## _STR = str \
-    
+
+    op_code(WORDS, -3, "words");
     op_code(CLS, -2, "cls");
     op_code(STACK, -1, "stack");
     op_code(IF, 0, "if");
@@ -51,6 +52,7 @@ namespace throf
     static unordered_map<string, PRIMITIVE_WORD> createStrToPrimMap()
     {
         unordered_map<string, PRIMITIVE_WORD> ret;
+        ret[PRIM_WORDS_STR]     = PRIM_WORDS    ;
         ret[PRIM_CLS_STR]       = PRIM_CLS      ;
         ret[PRIM_STACK_STR]     = PRIM_STACK    ;
         ret[PRIM_IF_STR]        = PRIM_IF       ;
@@ -87,6 +89,7 @@ namespace throf
     static unordered_map<PRIMITIVE_WORD, string> createPrimToStrMap()
     {
         unordered_map<PRIMITIVE_WORD, string> ret;
+        ret[PRIM_WORDS]     = PRIM_WORDS_STR    ;
         ret[PRIM_CLS]       = PRIM_CLS_STR      ;
         ret[PRIM_STACK]     = PRIM_STACK_STR    ;
         ret[PRIM_IF]        = PRIM_IF_STR       ;

@@ -10,7 +10,6 @@ namespace throf
 
         void repl();
         void loadFile(Tokenizer& tokenizer);
-        void dumpInterpreterState();
 
     // helper funcs
     private:
@@ -21,6 +20,7 @@ namespace throf
         StackElement createStackElementFromToken( Tokenizer& tokenizer, const Token& tok);
         void addWordToDictionary(Tokenizer& tokenizer, const std::string& s);
         std::string stackToString();
+        std::string loadedWordsToString();
 
         // pretty printers
         void prettyFormatStackElement(const StackElement& elem, stringstream& strBuilder);

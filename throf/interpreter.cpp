@@ -131,11 +131,14 @@ namespace throf
 
         switch(id)
         {
+        case PRIM_WORDS:
+            cout << loadedWordsToString();
+            break;
         case PRIM_CLS:
             _stack.clear();
             break;
         case PRIM_STACK:
-            printf("%s", stackToString().c_str());
+            cout << stackToString();
             break;
         case PRIM_IF:
             {
@@ -671,12 +674,13 @@ namespace throf
         return strBuilder.str();
     }
 
-    void Interpreter::dumpInterpreterState()
+    string Interpreter::loadedWordsToString()
     {
         stringstream strBuilder;
         size_t numCompiledWords = _stringToWordDict.size() - STR_TO_PRIM_WORD_MAP.size();
 
-        strBuilder << "Dictionary (compiled words: " << numCompiledWords << ") : " << endl << endl;
+        strBuilder << "Dictionary (compiled words: " << numCompiledWords;
+        strBuilder << ", primitive words: "  << STR_TO_PRIM_WORD_MAP.size()  << ") : " << endl << endl;
         for (auto itr = _stringToWordDict.begin(); itr != _stringToWordDict.end(); itr++)
         {
             if (_dictionary[(*itr).second].size() > 0)
@@ -698,8 +702,8 @@ namespace throf
             strBuilder << endl;
         }
 
-        strBuilder << endl << stackToString();
+        strBuilder << endl;
 
-        cout << strBuilder.str();
+        return strBuilder.str();
     }
 }

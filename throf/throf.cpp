@@ -45,7 +45,6 @@ int main(int argc, char* argv[])
             Tokenizer tokenizer = Tokenizer::tokenize(reader);
             interpreter.loadFile(tokenizer);
         }
-        interpreter.dumpInterpreterState();
     }
     catch (const ThrofException& e)
     {

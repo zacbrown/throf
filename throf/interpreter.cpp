@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "repl.h"
 #include <iostream>
 
 namespace throf

@@ -20,7 +20,7 @@ void loadInitFile(Interpreter& interpreter)
     if (nullptr != f)
     {
         fclose(f);
-        FileReader reader(INIT_FILENAME);
+        InputReader reader(INIT_FILENAME);
         Tokenizer tokenizer = Tokenizer::tokenize(reader);
         interpreter.loadFile(tokenizer);
     }
@@ -28,29 +28,31 @@ void loadInitFile(Interpreter& interpreter)
 
 int main(int argc, char* argv[])
 {
-    if (argc == 1)
+    try
     {
-        // REPL mode
-    }
-    else
-    {
-        string filename = argv[1];
-        try
+        Interpreter interpreter;
+        loadInitFile(interpreter);
+
+        if (argc == 1)
         {
-            Interpreter interpreter;
-            loadInitFile(interpreter);
-            FileReader reader(filename);
+            // REPL mode
+            interpreter.repl();
+        }
+        else
+        {
+            string filename = argv[1];
+            InputReader reader(filename);
             Tokenizer tokenizer = Tokenizer::tokenize(reader);
             interpreter.loadFile(tokenizer);
-            interpreter.dumpInterpreterState();
         }
-        catch (const ThrofException& e)
-        {
-            printError("Error encountered while processing file '%s'", filename.c_str());
-            printError("\t filename: %s", e.filename());
-            printError("\t component: %s", e.component());
-            printError("\t explanation: %s", e.what());
-        }
+        interpreter.dumpInterpreterState();
+    }
+    catch (const ThrofException& e)
+    {
+        printError("Error encountered while processing file:");
+        printError("\tfilename: %s", e.filename());
+        printError("\tcomponent: %s", e.component());
+        printError("\texplanation: %s", e.what());
     }
 
     return 0;

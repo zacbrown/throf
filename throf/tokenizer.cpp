@@ -19,11 +19,11 @@ namespace throf
     }
 
     // static
-    Tokenizer Tokenizer::tokenize(FileReader& reader)
+    Tokenizer Tokenizer::tokenize(InputReader& reader)
     {
         vector<Token> tokens;
 
-        auto fetch_next_token = [](FileReader& reader)
+        auto fetch_next_token = [](InputReader& reader)
         {
             stringstream strBuilder;
             int c = -1;
@@ -39,7 +39,7 @@ namespace throf
             return strBuilder.str();
         };
 
-        auto fetch_definition = [fetch_next_token](FileReader& reader)
+        auto fetch_definition = [fetch_next_token](InputReader& reader)
         {
             int colon = -1;
 
@@ -70,7 +70,7 @@ namespace throf
             return (0 == tok.compare(";")) ? Token::TokenType::DefinitionTerminator : Token::TokenType::WordOrData;
         };
 
-        auto check_if_marker = [](FileReader& reader, int checkChar)
+        auto check_if_marker = [](InputReader& reader, int checkChar)
         {
             auto throw_if_getc_failed = [reader, checkChar]()
             {
@@ -104,7 +104,7 @@ namespace throf
             return marker == checkChar && std::isspace(before) && (after == -1 || std::isspace(after));
         };
 
-        auto check_if_definition_marker = [](FileReader& reader)
+        auto check_if_definition_marker = [](InputReader& reader)
         {
             int marker = -1, space = -1;
             if (!reader.getc(marker) || !reader.getc(space))
@@ -118,7 +118,7 @@ namespace throf
             return std::isspace(space) && marker == ':';
         };
 
-        auto check_if_directive_marker = [fetch_next_token](FileReader& reader)
+        auto check_if_directive_marker = [fetch_next_token](InputReader& reader)
         {
             int marker = -1; int alphanumeric = -1;
 
@@ -132,7 +132,7 @@ namespace throf
             return std::isalnum(alphanumeric) && marker == ':';
         };
 
-        auto check_if_string_literal_end = [](FileReader& reader)
+        auto check_if_string_literal_end = [](InputReader& reader)
         {
             int quote = -1, space = -1;
             if (reader.getc(quote))

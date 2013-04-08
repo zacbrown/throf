@@ -30,6 +30,7 @@
 #include <sstream>
 #include <stack>
 #include <vector>
+#include <array>
 #include <unordered_set>
 #include <unordered_map>
 #include <regex>
@@ -43,10 +44,10 @@
 #define printInfo(s, ...) ::printf("INFO: " s "\n", __VA_ARGS__)
 #define printError(s, ...) ::printf("ERROR: " s "\n", __VA_ARGS__)
 
+#include "onleavescope.h"
 #include "throfexception.h"
 #include "common.h"
 #include "tokenizer.h"
 #include "stackelement.h"
 #include "interpreter.h"
-
-// TODO: reference additional headers your program requires here
+#include "repl.h"

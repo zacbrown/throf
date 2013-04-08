@@ -11,7 +11,7 @@ namespace throf
         void repl();
         void loadFile(Tokenizer& tokenizer);
         void dumpInterpreterState();
-    
+
     // helper funcs
     private:
         void initialize();

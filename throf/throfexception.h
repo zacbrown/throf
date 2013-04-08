@@ -43,5 +43,13 @@ namespace throf
         {
             return _component.c_str();
         }
+
+        static void throwIfTrue(bool expr, std::string strComponent, std::string strExplanation)
+        {
+            if (expr)
+            {
+                throw ThrofException(strComponent, strExplanation);
+            }
+        }
     };
 }

@@ -13,7 +13,8 @@ namespace throf
 
     void Interpreter::repl()
     {
-
+        REPL r(*this);
+        r.startProcessingLoop();
     }
 
     void Interpreter::initialize()
@@ -527,7 +528,7 @@ namespace throf
         {
         case PRIM_INCLUDE:
             {
-                FileReader reader(data);
+                InputReader reader(data);
                 Tokenizer tokenizer = Tokenizer::tokenize(reader);
                 loadFile(tokenizer);
             }

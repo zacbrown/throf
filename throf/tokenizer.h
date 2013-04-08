@@ -2,7 +2,7 @@
 
 namespace throf
 {
-    class FileReader
+    class InputReader
     {
         std::vector<int> _buffer;
         size_t _index;
@@ -22,19 +22,31 @@ namespace throf
         }
 
     public:
-        FileReader(std::string filename) : _index(0), _filename(filename)
+        InputReader(std::string data, bool isREPL = false) : _index(0)
         {
-            FILE* fileHandle = fopen(filename.c_str(), "r");
-            if (nullptr == fileHandle)
+            if (isREPL)
             {
-                stringstream strBuilder;
-                strBuilder << "fopen failed, errno = " << errno;
-                throw ThrofException("FileReader", strBuilder.str().c_str());
+                _filename = "REPL";
+                for (size_t ii = 0; ii < data.length() ; ii++)
+                {
+                    _buffer.push_back(data[ii]);
+                }
             }
-            slurpFile(fileHandle);
+            else
+            {
+                _filename = data;
+                FILE* fileHandle = fopen(_filename.c_str(), "r");
+                if (nullptr == fileHandle)
+                {
+                    stringstream strBuilder;
+                    strBuilder << "fopen failed, errno = " << errno;
+                    throw ThrofException("FileReader", strBuilder.str().c_str());
+                }
+                slurpFile(fileHandle);
+            }
         }
 
-        ~FileReader()
+        ~InputReader()
         {
         }
 
@@ -145,7 +157,7 @@ namespace throf
         void reset();
         const std::string& filename() const;
 
-        static Tokenizer tokenize(FileReader& reader);
+        static Tokenizer tokenize(InputReader& reader);
 
         ~Tokenizer();
 

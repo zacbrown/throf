@@ -9,9 +9,9 @@ namespace throf
         // private default ctor
         ThrofException() { }
 
+        std::string _component;
         std::string _explanation;
         std::string _filename;
-        std::string _component;
 
     public:
         ThrofException

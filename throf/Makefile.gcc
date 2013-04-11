@@ -1,13 +1,10 @@
-CFLAGS=-c -Wall -Werror -g
+CFLAGS=-c -Wall -Werror -g -std=c++11
 
-all: stdafx.o common.o interpreter.o throf.o tokenizer.o
+all: stdafx.o interpreter.o throf.o tokenizer.o
 	g++ stdafx.o common.o interpreter.o throf.o tokenizer.o -o throf 
 
 stdafx.o: stdafx.cpp stdafx.h
 	g++ $(CFLAGS) stdafx.cpp
-
-common.o: common.cpp
-	g++ $(CFLAGS) common.cpp
 
 interpreter.o: interpreter.cpp
 	g++ $(CFLAGS) interpreter.cpp

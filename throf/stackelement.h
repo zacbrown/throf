@@ -29,14 +29,14 @@ namespace throf
         };
 
     private:
-        int _dataWordRefCurrentOffset;
-        WORD_ID _dataWordRefId;
-        std::string _wordName;
+        ElementType _type;
         long _dataNumber;
         std::string _dataString;
-        std::vector<StackElement> _dataQuotation;
         BooleanType _dataBoolean;
-        ElementType _type;
+        int _dataWordRefCurrentOffset;
+        WORD_ID _dataWordRefId;
+        std::vector<StackElement> _dataQuotation;
+        std::string _wordName;
 
         // helper func
         void CopyObj(const StackElement& other);

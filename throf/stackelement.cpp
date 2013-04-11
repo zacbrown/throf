@@ -18,9 +18,9 @@ namespace throf
         _type(ElementType::Nil),
         _dataNumber(0xdeadbeef),
         _dataString(""),
+        _dataBoolean(false),
         _dataWordRefCurrentOffset(-1),
         _dataWordRefId(0xdeadbeef),
-        _dataBoolean(false),
         _wordName("")
     { }
 

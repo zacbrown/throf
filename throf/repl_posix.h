@@ -10,12 +10,12 @@ namespace throf
     class REPL
     {
     private:
-        Interpreter& interpreter;
+        //Interpreter& interpreter;
 
         REPL& operator=(REPL& other) { return other; } // block assignment
 
     public:
-        REPL(Interpreter& i) : interpreter(i)
+        REPL(Interpreter& i)// : interpreter(i)
         {
             startProcessingLoop();
         }

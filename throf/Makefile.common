@@ -1,0 +1,13 @@
+
+SOURCES = stdafx.cpp interpreter.cpp throf.cpp tokenizer.cpp stackelement.cpp
+OBJECTS = $(SOURCES:.cpp=.o)
+BIN = throf
+
+all : $(BIN)
+
+$(BIN) : $(OBJECTS)
+	$(CXX) $(LDFLAGS) -o $(BIN) $^
+
+clean :
+	rm -f *.o
+	rm -f throf

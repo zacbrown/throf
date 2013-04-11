@@ -14,7 +14,7 @@
 
 #define UNREFERENCED_PARAMETER(e) e
 
-#if ((__GNUC__ <= 4) && (__GNUC_MINOR__ < 7))
+#if ((__GCC__) && (__GNUC__ <= 4) && (__GNUC_MINOR__ < 7))
 #error GCC version must be 4.7 or higher.
 #endif
 

@@ -3,6 +3,9 @@
 *.lo
 *.o
 
+# Compiled binaries
+throf/throf
+
 # Compiled Dynamic libraries
 *.so
 *.dylib

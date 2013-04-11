@@ -3,5 +3,5 @@
 #ifdef _WIN32
 #include "repl_win32.h"
 #else
-//#include "repl_posix.h"
+#include "repl_posix.h"
 #endif

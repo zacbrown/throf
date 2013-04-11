@@ -98,6 +98,7 @@
     <ClInclude Include="interpreter.h" />
     <ClInclude Include="onleavescope.h" />
     <ClInclude Include="repl.h" />
+    <ClInclude Include="repl_posix.h" />
     <ClInclude Include="repl_win32.h" />
     <ClInclude Include="stackelement.h" />
     <ClInclude Include="throfexception.h" />

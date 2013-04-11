@@ -359,6 +359,9 @@ namespace throf
                 case StackElement::WordReference:
                     dispatch(innerElem);
                     break;
+                case StackElement::Nil:
+                default:
+                    break;
                 }
             }
             break;
@@ -503,6 +506,9 @@ namespace throf
             break;
         case StackElement::WordReference:
             dispatch(elem);
+            break;
+        case StackElement::Nil:
+        default:
             break;
         }
     }

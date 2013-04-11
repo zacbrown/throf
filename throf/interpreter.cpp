@@ -51,7 +51,7 @@ namespace throf
                 break;
             case StackElement::Nil:
             default:
-                errBuilder << "uninitialized (??)";
+                errBuilder << "uninitialized (?)";
                 break;
             }
 

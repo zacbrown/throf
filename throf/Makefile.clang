@@ -1,0 +1,4 @@
+CXXFLAGS=-c -Wall -Werror -g -std=c++11 -stdlib=libc++
+LDFLAGS = -stdlib=libc++
+
+include Makefile.common

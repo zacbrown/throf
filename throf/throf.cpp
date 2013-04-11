@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     }
     catch (const ThrofException& e)
     {
-        printError("Error encountered while processing file:");
+        printf("ERROR: Error encountered while processing file:");
         printError("\tfilename: %s", e.filename());
         printError("\tcomponent: %s", e.component());
         printError("\texplanation: %s", e.what());

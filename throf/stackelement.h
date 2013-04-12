@@ -38,9 +38,6 @@ namespace throf
         std::vector<StackElement> _dataQuotation;
         std::string _wordName;
 
-        // helper func
-        void CopyObj(const StackElement& other);
-
     public:
         const std::string& stringData() const;
 

@@ -2,18 +2,6 @@
 
 namespace throf
 {
-    void StackElement::CopyObj(const StackElement& other)
-    {
-        this->_dataNumber = other._dataNumber;
-        this->_dataString = other._dataString;
-        this->_dataQuotation = other._dataQuotation;
-        this->_dataBoolean = other._dataBoolean;
-        this->_dataWordRefCurrentOffset = other._dataWordRefCurrentOffset;
-        this->_dataWordRefId = other._dataWordRefId;
-        this->_wordName = other._wordName;
-        this->_type = other._type;
-    }
-
     StackElement::StackElement() :
         _type(ElementType::Nil),
         _dataNumber(0xdeadbeef),
@@ -77,12 +65,19 @@ namespace throf
 
     StackElement::StackElement(const StackElement& other)
     {
-        CopyObj(other);
+        *this = other;
     }
 
-    StackElement& StackElement::operator=(const StackElement& right)
+    StackElement& StackElement::operator=(const StackElement& other)
     {
-        CopyObj(right);
+        this->_dataNumber = other._dataNumber;
+        this->_dataString = other._dataString;
+        this->_dataQuotation = other._dataQuotation;
+        this->_dataBoolean = other._dataBoolean;
+        this->_dataWordRefCurrentOffset = other._dataWordRefCurrentOffset;
+        this->_dataWordRefId = other._dataWordRefId;
+        this->_wordName = other._wordName;
+        this->_type = other._type;
         return *this;
     }
 

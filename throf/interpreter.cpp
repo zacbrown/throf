@@ -79,7 +79,7 @@ namespace throf
         case StackElement::String:
         case StackElement::Quotation:
         case StackElement::Variable:
-            _stack.emplace_back(elem);
+            _stack.push_back(elem);
             return;
         case StackElement::WordReference:
             break;
@@ -163,8 +163,8 @@ namespace throf
             {
                 StackElement topOrig = _stack.back(); _stack.pop_back();
                 StackElement bottomOrig = _stack.back(); _stack.pop_back();
-                _stack.emplace_back(topOrig);
-                _stack.emplace_back(bottomOrig);
+                _stack.push_back(topOrig);
+                _stack.push_back(bottomOrig);
             }
             break;
         case PRIM_TWOSWAP:
@@ -196,7 +196,7 @@ namespace throf
                 throwIfVariableNotDefined(variableName, "variable not defined ");
 
                 StackElement data = _dictionary[_stringToWordDict[variableName.stringData()]].back().back();
-                _stack.emplace_back(data);
+                _stack.push_back(data);
             }
             break;
         case PRIM_ROT:
@@ -205,7 +205,7 @@ namespace throf
                 itr -= 3;
                 StackElement elem = *itr;
                 _stack.erase(itr);
-                _stack.emplace_back(elem);
+                _stack.push_back(elem);
             }
             break;
         case PRIM_NROT:
@@ -234,7 +234,7 @@ namespace throf
                     id++;
                 }
                 StackElement elem = *itr;
-                _stack.emplace_back(elem);
+                _stack.push_back(elem);
             }
             break;
         case PRIM_ADD:
@@ -247,7 +247,7 @@ namespace throf
                 StackElement bottom = _stack.back(); _stack.pop_back();
                 throwIfTypeUnexpected(top, StackElement::Number, "expected number, got : ");
                 throwIfTypeUnexpected(bottom, StackElement::Number, "expected number, got : ");
-                _stack.emplace_back(StackElement(StackElement::Number, dispatch_arithmetic(id, top, bottom)));
+                _stack.push_back(StackElement(StackElement::Number, dispatch_arithmetic(id, top, bottom)));
             }
             break;
         case PRIM_LT:
@@ -259,7 +259,7 @@ namespace throf
                 StackElement bottom = _stack.back(); _stack.pop_back();
                 throwIfTypeUnexpected(top, StackElement::Number, "expected number, got : ");
                 throwIfTypeUnexpected(bottom, StackElement::Number, "expected number, got : ");
-                _stack.emplace_back(StackElement(StackElement::Boolean,
+                _stack.push_back(StackElement(StackElement::Boolean,
                     StackElement::BooleanType(dispatch_comparison(id, top, bottom))));
             }
             break;
@@ -302,14 +302,14 @@ namespace throf
                     ret = !ret;
                 }
 
-                _stack.emplace_back(StackElement(StackElement::Boolean, StackElement::BooleanType(ret)));
+                _stack.push_back(StackElement(StackElement::Boolean, StackElement::BooleanType(ret)));
             }
             break;
         case PRIM_NOT:
             {
                 StackElement elem = _stack.back(); _stack.pop_back();
                 throwIfTypeUnexpected(elem, StackElement::Boolean, "expected boolean, got : ");
-                _stack.emplace_back(StackElement(StackElement::Boolean,
+                _stack.push_back(StackElement(StackElement::Boolean,
                     StackElement::BooleanType(!elem.booleanData())));
             }
             break;
@@ -336,7 +336,7 @@ namespace throf
                     break;
                 }
 
-                _stack.emplace_back(StackElement(StackElement::Boolean,
+                _stack.push_back(StackElement(StackElement::Boolean,
                     StackElement::BooleanType(ret)));
             }
             break;
@@ -354,7 +354,7 @@ namespace throf
                 case StackElement::String:
                 case StackElement::Variable:
                 case StackElement::Quotation:
-                    _stack.emplace_back(StackElement(innerElem));
+                    _stack.push_back(StackElement(innerElem));
                     break;
                 case StackElement::WordReference:
                     dispatch(innerElem);
@@ -421,7 +421,7 @@ namespace throf
                     break;
                 }
 
-                quotation.emplace_back(createStackElementFromToken(tokenizer, nextTok));
+                quotation.push_back(createStackElementFromToken(tokenizer, nextTok));
             }
 
             return StackElement(StackElement::Quotation, quotation);
@@ -452,7 +452,7 @@ namespace throf
 
         while (tok.getType() != Token::DefinitionTerminator)
         {
-            ret.emplace_back(createStackElementFromToken(tokenizer, tok));
+            ret.push_back(createStackElementFromToken(tokenizer, tok));
 
             if (tokenizer.hasNextToken())
             {
@@ -488,7 +488,7 @@ namespace throf
         }
         else
         {
-            _dictionary[id].emplace_back(ret);
+            _dictionary[id].push_back(ret);
         }
     }
 
@@ -502,7 +502,7 @@ namespace throf
         case StackElement::String:
         case StackElement::Variable:
         case StackElement::Quotation:
-            _stack.emplace_back(elem);
+            _stack.push_back(elem);
             break;
         case StackElement::WordReference:
             dispatch(elem);
@@ -530,8 +530,8 @@ namespace throf
                 id = strDict[data] = strDict.size() + 1;
             }
             vector<StackElement> newVal;
-            newVal.emplace_back(StackElement());
-            dict[id].emplace_back(newVal);
+            newVal.push_back(StackElement());
+            dict[id].push_back(newVal);
         };
 
         switch(directiveId)
@@ -593,7 +593,7 @@ namespace throf
                             break;
                         }
 
-                        quotation.emplace_back(createStackElementFromToken(tokenizer, tok));
+                        quotation.push_back(createStackElementFromToken(tokenizer, tok));
                     }
 
                     if (tok.getType() != Token::TokenType::QuotationClose)
@@ -601,7 +601,7 @@ namespace throf
                         throw ThrofException("Interpreter", "unexpected end of quotation without closing marker ']'", _filename);
                     }
 
-                    _stack.emplace_back(StackElement(StackElement::Quotation, quotation));
+                    _stack.push_back(StackElement(StackElement::Quotation, quotation));
                 }
                 break;
             case Token::TokenType::QuotationClose:

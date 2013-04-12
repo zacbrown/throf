@@ -273,9 +273,9 @@ namespace throf
 
             while (_tokens[_tokensIndex].getType() != Token::TokenType::QuotationClose)
             {
-                ret.emplace_back(_tokens[_tokensIndex++]);
+                ret.push_back(_tokens[_tokensIndex++]);
             }
-            ret.emplace_back(_tokens[_tokensIndex]); // add the QuotationClose
+            ret.push_back(_tokens[_tokensIndex]); // add the QuotationClose
 
             return ret;
         }

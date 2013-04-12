@@ -64,6 +64,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <StackReserveSize>8388608</StackReserveSize>
+      <StackCommitSize>8192</StackCommitSize>
     </Link>
     <CustomBuildStep>
       <Command>

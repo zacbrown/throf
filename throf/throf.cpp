@@ -2,6 +2,7 @@
 
 using namespace throf;
 
+extern int* TOP_OF_STACK;
 const char* const INIT_FILENAME = "init.th4";
 
 void dumpTokens(Tokenizer& tokenizer)
@@ -28,6 +29,8 @@ void loadInitFile(Interpreter& interpreter)
 
 int main(int argc, char* argv[])
 {
+    int __TOP_OF_STACK;
+    TOP_OF_STACK = &__TOP_OF_STACK;
     try
     {
         Interpreter interpreter;
@@ -48,7 +51,7 @@ int main(int argc, char* argv[])
     }
     catch (const ThrofException& e)
     {
-        printf("ERROR: Error encountered while processing file:");
+        printf("ERROR: Error encountered while processing file:\n");
         printError("\tfilename: %s", e.filename());
         printError("\tcomponent: %s", e.component());
         printError("\texplanation: %s", e.what());

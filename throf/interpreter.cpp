@@ -2,6 +2,8 @@
 #include "repl.h"
 #include <iostream>
 
+int* TOP_OF_STACK;
+
 namespace throf
 {
     Interpreter::Interpreter() : _filename("")
@@ -69,8 +71,28 @@ namespace throf
         }
     }
 
+    inline int getCurrentStackSize()
+    {
+        int local;
+        int curStackSize = (&local) - TOP_OF_STACK;
+
+        if (curStackSize < 0) curStackSize *= -1;
+
+        return curStackSize;
+    }
+
     void Interpreter::dispatch(const StackElement elem)
     {
+        static const int MAX_ALLOWED_STACK = 1048576; // 4MB
+
+        if (getCurrentStackSize() >= MAX_ALLOWED_STACK)
+        {
+            stringstream errBuilder;
+            errBuilder << "Stack overflow detected. Infinite recursion may exist in your program. Current word: ";
+            errBuilder << elem.wordName();
+            throw ThrofException("Interpreter", errBuilder.str(), _filename);
+        }
+
         string& filename = _filename;
         switch (elem.type())
         {

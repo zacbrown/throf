@@ -53,7 +53,7 @@ namespace throf
 
             for(;;)
             {
-                std::cout << "> ";
+                std::cout << REPL_PROMPT;
 
                 ThrofException::throwIfTrue(FALSE == ReadConsole(this->hStdIn, chars, BUFFER_SIZE, &dwNumCharsRead, NULL), "REPL",
                     "ReadConsole failed while reading input with GetLastError()=" + to_string(GetLastError()));

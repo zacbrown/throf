@@ -12,6 +12,5 @@ Throf is being built with Visual Studio 2012's MSVC. It takes advantage of many 
 * unordered_set
 * unordered_map
 * auto
-* emplace-style methods (though MSVC doesn't fully support these)
 
 Additionally, Throf will compile with GCC 4.7.2 and above.

@@ -2,11 +2,12 @@
 SOURCES = stdafx.cpp interpreter.cpp throf.cpp tokenizer.cpp stackelement.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 BIN = throf
+LIBS = -lreadline
 
 all : $(BIN)
 
 $(BIN) : $(OBJECTS)
-	$(CXX) $(LDFLAGS) -o $(BIN) $^
+	$(CXX) $(LDFLAGS) -o $(BIN) $(LIBS) $^
 
 clean :
 	rm -f *.o

@@ -83,7 +83,7 @@ namespace throf
 
     void Interpreter::dispatch(const StackElement elem)
     {
-        static const int MAX_ALLOWED_STACK = 1048576; // 4MB
+        static const int MAX_ALLOWED_STACK = 1048576; // 1MB
 
         if (getCurrentStackSize() >= MAX_ALLOWED_STACK)
         {

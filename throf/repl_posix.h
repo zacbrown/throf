@@ -50,8 +50,7 @@ namespace throf
                 }
                 catch (const ThrofException& e)
                 {
-                    printf("ERROR: Error encountered while processing file:");
-                    printError("\tfilename: %s", e.filename());
+                    printf("ERROR: Error encountered while processing REPL input:");
                     printError("\tcomponent: %s", e.component());
                     printError("\texplanation: %s", e.what());
                 }

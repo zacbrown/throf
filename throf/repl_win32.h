@@ -60,9 +60,18 @@ namespace throf
 
                 chars[dwNumCharsRead] = 0; // so we don't pass junk in.
 
-                InputReader reader(std::string(chars), true);
-                auto tokenizer = Tokenizer::tokenize(reader);
-                interpreter.loadFile(tokenizer);
+                try
+                {
+                    InputReader reader(std::string(chars), true);
+                    auto tokenizer = Tokenizer::tokenize(reader);
+                    interpreter.loadFile(tokenizer);
+                }
+                catch (ThrofException& e)
+                {
+                    printf("ERROR: Error encountered while processing REPL input:\n");
+                    printError("\tcomponent: %s", e.component());
+                    printError("\texplanation: %s", e.what());
+                }
             }
         }
     };

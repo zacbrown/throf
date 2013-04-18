@@ -10,4 +10,4 @@
     2dup > [ drop ] [ nip ] if ;
 
 : abs ( n -- +n )
-	dup 0 < [ negate ] when ;
+    dup 0 < [ negate ] when ;

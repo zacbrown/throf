@@ -10,23 +10,23 @@ namespace throf
     class REPL
     {
     private:
-        HANDLE hStdIn;
-        DWORD dwOriginalConsoleSettings;
-        Interpreter& interpreter;
+        HANDLE _hStdIn;
+        DWORD _dwOriginalConsoleSettings;
+        Interpreter& _interpreter;
 
         REPL& operator=(REPL& other) { return other; } // block assignment
 
     public:
-        REPL(Interpreter& i) : interpreter(i)
+        REPL(Interpreter& i) : _interpreter(i)
         {
-            this->hStdIn = GetStdHandle(STD_INPUT_HANDLE);
-            ThrofException::throwIfTrue(INVALID_HANDLE_VALUE == this->hStdIn, "REPL", 
+            _hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+            ThrofException::throwIfTrue(INVALID_HANDLE_VALUE == _hStdIn, "REPL", 
                 string("GetStdHandle failed while setting up REPL with GetLastError()=" + to_string(GetLastError())));
 
-            ThrofException::throwIfTrue(GetConsoleMode(this->hStdIn, &dwOriginalConsoleSettings) == FALSE, "REPL",
+            ThrofException::throwIfTrue(GetConsoleMode(_hStdIn, &_dwOriginalConsoleSettings) == FALSE, "REPL",
                 string("GetConsoleMode failed while setting up REPL with GetLastError()=" + to_string(GetLastError())));
 
-            ThrofException::throwIfTrue(SetConsoleMode(this->hStdIn, ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT) == FALSE,
+            ThrofException::throwIfTrue(SetConsoleMode(_hStdIn, ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT) == FALSE,
                 "REPL", string("SetConsoleMode failed while setting up REPL with GetLastError()=" + to_string(GetLastError())));
 
             startProcessingLoop();
@@ -34,12 +34,12 @@ namespace throf
 
         ~REPL()
         {
-            ThrofException::throwIfTrue(SetConsoleMode(this->hStdIn, dwOriginalConsoleSettings) == FALSE, "REPL",
+            ThrofException::throwIfTrue(SetConsoleMode(_hStdIn, _dwOriginalConsoleSettings) == FALSE, "REPL",
                 string("SetConsoleMode failed while restoring console settings with GetLastError()=" + to_string(GetLastError())));
 
-            if (this->hStdIn)
+            if (_hStdIn)
             {
-                CloseHandle(this->hStdIn);
+                CloseHandle(_hStdIn);
             }
         }
 
@@ -55,7 +55,7 @@ namespace throf
             {
                 std::cout << REPL_PROMPT;
 
-                ThrofException::throwIfTrue(FALSE == ReadConsole(this->hStdIn, chars, BUFFER_SIZE, &dwNumCharsRead, NULL), "REPL",
+                ThrofException::throwIfTrue(FALSE == ReadConsole(_hStdIn, chars, BUFFER_SIZE, &dwNumCharsRead, NULL), "REPL",
                     "ReadConsole failed while reading input with GetLastError()=" + to_string(GetLastError()));
 
                 chars[dwNumCharsRead] = 0; // so we don't pass junk in.
@@ -64,7 +64,7 @@ namespace throf
                 {
                     InputReader reader(std::string(chars), true);
                     auto tokenizer = Tokenizer::tokenize(reader);
-                    interpreter.loadFile(tokenizer);
+                    _interpreter.loadFile(tokenizer);
                 }
                 catch (ThrofException& e)
                 {

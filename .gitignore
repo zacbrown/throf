@@ -28,3 +28,6 @@ throf/throf
 *.vcxproj.user
 Debug
 ipch
+
+# Mac OS X .DS_Store trash files
+.DS_Store

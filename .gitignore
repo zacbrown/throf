@@ -31,3 +31,5 @@ ipch
 
 # Mac OS X .DS_Store trash files
 .DS_Store
+
+*.bin

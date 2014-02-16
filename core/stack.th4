@@ -22,3 +22,5 @@
 
 : 2over ( w x y z -- w x y z w x )
     3 pick 3 pick ;
+
+: -rot ( a b c -- c a b ) rot rot ;

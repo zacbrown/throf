@@ -201,11 +201,16 @@ module Parser =
         printfn "================="
 
 module Interpreter =
-    type State = {
+    type State =
+        {
         SymbolTable : Map<string, list<Parser.Node>>;
         Stack : list<Parser.Node>;
         ExecutionStream : list<Parser.Node>
-    }
+        }
+
+        member this.withNewStack(stack) =
+            { SymbolTable = this.SymbolTable; ExecutionStream = this.ExecutionStream;
+                Stack = stack }
 
     let getInterpreterState (state : State) =
         let symTable =
@@ -224,17 +229,21 @@ module Interpreter =
 
     exception MissingParseNodeInExecutionStream of string * string * string
     exception UnexpectedParserNode of string
+    exception IntegerExpected of string
     exception NativeWordExpected of string
     exception StackUnderflow of string * string
 
     let applyQuotationToStack (q : list<Parser.Node>) (state : State) =
-        { Stack = (List.rev q) @ state.Stack;
-            SymbolTable = state.SymbolTable;
-            ExecutionStream = state.ExecutionStream }
+        state.withNewStack <| (List.rev q) @ state.Stack
 
     module NativeWords =
+        let private raiseStackUnderflow (state : State) =
+            let (_, stack, stream) = getInterpreterState state
+            raise <| StackUnderflow(stack, stream)
+
         let ifWord (state : State) = 
             match state.Stack with
+            | [] | [_ ; _] | [_] -> raiseStackUnderflow state
             | (predicate :: falseQuotation :: trueQuotation :: stack) ->
                 match predicate with
                 | Parser.Real 0.0 | Parser.Integer 0 | Parser.Boolean false ->
@@ -246,38 +255,76 @@ module Interpreter =
                     | Parser.Quotation q -> applyQuotationToStack q state
                     | _ -> raise <| UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" trueQuotation)
                 | _ -> raise <| UnexpectedParserNode (sprintf "%+A" predicate)
-            | [] | [_ ; _] | [_] ->
-                let (_, stack, stream) = getInterpreterState state
-                raise <| StackUnderflow(stack, stream)
 
         let  dropWord (state : State) =
             match state.Stack with
-            | [] ->
-                let (_, stack, stream) = getInterpreterState state
-                raise <| StackUnderflow(stack, stream)
-            | _ -> { Stack = state.Stack.Tail; SymbolTable = state.SymbolTable; ExecutionStream = state.ExecutionStream }
+            | [] -> raiseStackUnderflow state
+            | _ -> state.withNewStack state.Stack.Tail
 
         let stackWord (state : State) =
+            let rec printType (elem : Parser.Node) =
+                match elem with
+                | Parser.Integer value -> printfn "%d" value
+                | Parser.Real value -> printfn "%f" value
+                | Parser.Boolean value -> printfn "%b" value
+                | Parser.StringLiteral value -> printfn "\"%s\"" value
+                | Parser.Word value -> printfn "%s" value
+                | Parser.Quotation value ->
+                    printf "["
+                    for x in value do
+                        printType x
+                        printfn " "
+                    printfn "]"
+                | _ -> raise <| UnexpectedParserNode (sprintf "The interpreter is in an unexpected state. The parse node '%+A' was unexpected on the stack." elem)
             printfn "Stack"
             printfn "============="
             for elem in state.Stack do
-                printfn "%+A" elem
+                printType elem
             printfn ""
             state
 
+        let swapWord (state : State) =
+            match state.Stack with
+            | [] | [_] -> raiseStackUnderflow state
+            | (first :: second :: rest) ->
+                state.withNewStack (second :: first :: rest)
+
+        let twoSwapWord (state : State) =
+            match state.Stack with
+            | [] | [_] | [_; _] | [_; _; _] -> raiseStackUnderflow state
+            | (first :: second :: third :: fourth :: rest) ->
+                state.withNewStack (third :: fourth :: first :: second :: rest)
+
+        let rotWord (state : State) =
+            match state.Stack with
+            | [] | [_] | [_; _] -> raiseStackUnderflow state
+            | (first :: second :: third :: rest) ->
+                state.withNewStack (second :: third :: first :: rest)
+
+        let pickWord (state : State) =
+            match state.Stack with
+            | [] -> raiseStackUnderflow state
+            | (depth :: rest) ->
+                match depth with
+                | Parser.Integer value -> 
+                    try
+                        let picked = List.nth rest value
+                        state.withNewStack (picked :: rest)
+                    with
+                    | :? System.ArgumentException as ex -> raiseStackUnderflow state
+                | _ -> raise <| IntegerExpected (sprintf "Expected Integer with word 'pick', got %+A" depth)
 
     let dispatchNativeWord (nativeWord : string) (state : State) =
         match nativeWord with
         | "stack" -> NativeWords.stackWord state
         | "if" -> NativeWords.ifWord state
         | "drop" -> NativeWords.dropWord state
-        | "swap" -> state
-        | "2swap" -> state
+        | "swap" -> NativeWords.swapWord state
+        | "2swap" -> NativeWords.twoSwapWord state
         | "!" -> state // set
         | "@" -> state // get
-        | "rot" -> state
-        | "-rot" -> state
-        | "pick" -> state
+        | "rot" -> NativeWords.rotWord state
+        | "pick" -> NativeWords.pickWord state
         | "+" -> state
         | "-" -> state
         | "*" -> state
@@ -313,9 +360,7 @@ module Interpreter =
             | _ -> raise <| UnexpectedParserNode (sprintf "%+A" node_)
 
     let pushData (x : Parser.Node) (state : State) =
-        { SymbolTable = state.SymbolTable;
-            Stack = x :: state.Stack;
-            ExecutionStream = state.ExecutionStream }
+        state.withNewStack <| x :: state.Stack
 
     let executeDirective (x : Parser.Node) (state : State) =
         state

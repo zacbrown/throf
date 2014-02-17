@@ -230,13 +230,14 @@ module Interpreter =
     exception MissingParseNodeInExecutionStream of string * string * string
     exception UnexpectedParserNode of string
     exception IntegerExpected of string
-    exception NativeWordExpected of string
+    exception NumericExpected of string
+    exception InvalidOperation of string
     exception StackUnderflow of string * string
 
     let applyQuotationToStack (q : list<Parser.Node>) (state : State) =
         state.withNewStack <| (List.rev q) @ state.Stack
 
-    module NativeWords =
+    module PrimitiveWords =
         let private raiseStackUnderflow (state : State) =
             let (_, stack, stream) = getInterpreterState state
             raise <| StackUnderflow(stack, stream)
@@ -313,23 +314,93 @@ module Interpreter =
                     with
                     | :? System.ArgumentException as ex -> raiseStackUnderflow state
                 | _ -> raise <| IntegerExpected (sprintf "Expected Integer with word 'pick', got %+A" depth)
+                    
+        type MathOperation =
+            | Addition
+            | Subtraction
+            | Division
+            | Multiplication
+            | Modulo
+        and BooleanOperation =
+            | LessThan
+            | LessThanOrEqual
+            | GreaterThan
+            | GreatherThanOrEqual
+            | Equal
+            | NotEqual
 
-    let dispatchNativeWord (nativeWord : string) (state : State) =
-        match nativeWord with
-        | "stack" -> NativeWords.stackWord state
-        | "if" -> NativeWords.ifWord state
-        | "drop" -> NativeWords.dropWord state
-        | "swap" -> NativeWords.swapWord state
-        | "2swap" -> NativeWords.twoSwapWord state
+        let inline doMathOperation (operation : MathOperation) left right =
+            match operation with
+            | Addition -> left + right
+            | Subtraction ->  left - right
+            | Multiplication -> left * right
+            | Division -> left / right
+            | Modulo -> left % right
+
+        let inline doBooleanOperation (operation : BooleanOperation) left right =
+            match operation with
+            | LessThan -> left < right
+            | LessThanOrEqual -> left <= right
+            | GreaterThan -> left > right
+            | GreatherThanOrEqual -> left >= right
+            | Equal -> left = right
+            | NotEqual -> left <> right
+
+        let mathAndStringOperations (state : State) operation =
+            let raiseInvalidOperation left right =
+                raise <| InvalidOperation (sprintf "Types '%+A' and '%+A' cannot be added together." left right)
+
+            match state.Stack with
+            | [] | [_] -> raiseStackUnderflow state
+            | (left :: right :: rest) ->
+                match left with
+                | Parser.Integer lvalue ->
+                    match right with
+                    | Parser.Integer rvalue ->
+                        Parser.Integer (doMathOperation operation lvalue rvalue) :: rest
+                        |> state.withNewStack
+                    | Parser.Real rvalue ->
+                        Parser.Real (doMathOperation operation (double lvalue) rvalue) :: rest
+                        |> state.withNewStack
+                    | _ -> raiseInvalidOperation left right
+
+                | Parser.Real lvalue ->
+                    match right with
+                    | Parser.Real rvalue ->
+                        Parser.Real (doMathOperation operation lvalue rvalue) :: rest
+                        |> state.withNewStack
+                    | Parser.Integer rvalue ->
+                        Parser.Real (doMathOperation operation lvalue (double rvalue)) :: rest
+                        |> state.withNewStack
+                    | _ -> raiseInvalidOperation left right
+
+                | Parser.StringLiteral lvalue ->
+                    match right with
+                    | Parser.StringLiteral rvalue ->
+                        match operation with
+                        | Addition ->
+                            (Parser.StringLiteral (lvalue + rvalue)) :: rest
+                            |> state.withNewStack
+                        | _ -> raiseInvalidOperation left right
+                    | _ -> raiseInvalidOperation left right
+                | _ -> raiseInvalidOperation left right
+
+    let dispatchPrimitiveWord (primitiveWord : string) (state : State) =
+        match primitiveWord with
+        | "stack" -> PrimitiveWords.stackWord state
+        | "if" -> PrimitiveWords.ifWord state
+        | "drop" -> PrimitiveWords.dropWord state
+        | "swap" -> PrimitiveWords.swapWord state
+        | "2swap" -> PrimitiveWords.twoSwapWord state
         | "!" -> state // set
         | "@" -> state // get
-        | "rot" -> NativeWords.rotWord state
-        | "pick" -> NativeWords.pickWord state
-        | "+" -> state
-        | "-" -> state
-        | "*" -> state
-        | "/" -> state
-        | "mod" -> state
+        | "rot" -> PrimitiveWords.rotWord state
+        | "pick" -> PrimitiveWords.pickWord state
+        | "+" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Addition
+        | "-" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Subtraction
+        | "*" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Multiplication
+        | "/" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Division
+        | "mod" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Modulo
         | "<" -> state
         | ">" -> state
         | "<=" -> state
@@ -340,7 +411,7 @@ module Interpreter =
         | "and" -> state
         | "or" -> state
         | "xor" -> state
-        | _ -> raise <| NativeWordExpected (sprintf "%+A" nativeWord)
+        | _ -> raise <| InvalidOperation (sprintf "Primitive word expected, got '%+A'." primitiveWord)
 
     let dispatchWord (state : State) =
         match state.ExecutionStream with
@@ -356,7 +427,7 @@ module Interpreter =
                         Stack = state.Stack;
                         SymbolTable = state.SymbolTable }
                 | None -> 
-                    dispatchNativeWord name state
+                    dispatchPrimitiveWord name state
             | _ -> raise <| UnexpectedParserNode (sprintf "%+A" node_)
 
     let pushData (x : Parser.Node) (state : State) =

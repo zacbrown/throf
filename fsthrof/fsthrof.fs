@@ -88,6 +88,11 @@ module Parser =
         | Boolean of value : bool
         | StringLiteral of data : string
         | Quotation of list<Node>
+        with
+            member this.IsTruthy() =
+                match this with
+                | Integer 0 | Real 0.0 | Boolean false -> false
+                | _ -> true
     and ParsedContent = {
         SymbolTable : Map<string, list<Node>>;
         ExecutionStream : list<Node>;
@@ -314,6 +319,13 @@ module Interpreter =
                     with
                     | :? System.ArgumentException as ex -> raiseStackUnderflow state
                 | _ -> raise <| IntegerExpected (sprintf "Expected Integer with word 'pick', got %+A" depth)
+
+        let notWord (state : State) =
+            match state.Stack with
+            | [] -> raiseStackUnderflow state
+            | (top :: rest) ->
+                Parser.Boolean (not <| top.IsTruthy()) :: rest
+                |> state.withNewStack
                     
         type MathOperation =
             | Addition
@@ -325,9 +337,12 @@ module Interpreter =
             | LessThan
             | LessThanOrEqual
             | GreaterThan
-            | GreatherThanOrEqual
+            | GreaterThanOrEqual
             | Equal
             | NotEqual
+            | And
+            | Or
+            | Xor
 
         let inline doMathOperation (operation : MathOperation) left right =
             match operation with
@@ -342,14 +357,26 @@ module Interpreter =
             | LessThan -> left < right
             | LessThanOrEqual -> left <= right
             | GreaterThan -> left > right
-            | GreatherThanOrEqual -> left >= right
+            | GreaterThanOrEqual -> left >= right
             | Equal -> left = right
             | NotEqual -> left <> right
+            | And -> left && right
+            | Or -> left || right
+            | Xor -> (left && not right) || (not left && right)
+
+        let raiseInvalidOperation left right =
+            raise <| InvalidOperation (sprintf "Types '%+A' and '%+A' cannot be added together." left right)
+
+        let booleanOperations ( state : State) operation =
+            match state.Stack with
+            | [] | [_] -> raiseStackUnderflow state
+            | (left :: right :: rest) ->
+                let lvalue = left.IsTruthy()
+                let rvalue = right.IsTruthy()
+                Parser.Boolean (doBooleanOperation operation lvalue rvalue) :: rest
+                |> state.withNewStack
 
         let mathAndStringOperations (state : State) operation =
-            let raiseInvalidOperation left right =
-                raise <| InvalidOperation (sprintf "Types '%+A' and '%+A' cannot be added together." left right)
-
             match state.Stack with
             | [] | [_] -> raiseStackUnderflow state
             | (left :: right :: rest) ->
@@ -401,16 +428,16 @@ module Interpreter =
         | "*" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Multiplication
         | "/" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Division
         | "mod" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Modulo
-        | "<" -> state
-        | ">" -> state
-        | "<=" -> state
-        | ">=" -> state
-        | "==" -> state
-        | "<>" -> state
-        | "not" -> state
-        | "and" -> state
-        | "or" -> state
-        | "xor" -> state
+        | "<" -> PrimitiveWords.booleanOperations state PrimitiveWords.LessThan
+        | ">" -> PrimitiveWords.booleanOperations state PrimitiveWords.GreaterThan
+        | "<=" -> PrimitiveWords.booleanOperations state PrimitiveWords.LessThanOrEqual
+        | ">=" -> PrimitiveWords.booleanOperations state PrimitiveWords.GreaterThanOrEqual
+        | "=" -> PrimitiveWords.booleanOperations state PrimitiveWords.Equal
+        | "<>" -> PrimitiveWords.booleanOperations state PrimitiveWords.NotEqual
+        | "not" -> PrimitiveWords.notWord state
+        | "and" -> PrimitiveWords.booleanOperations state PrimitiveWords.And
+        | "or" -> PrimitiveWords.booleanOperations state PrimitiveWords.Or
+        | "xor" -> PrimitiveWords.booleanOperations state PrimitiveWords.Xor
         | _ -> raise <| InvalidOperation (sprintf "Primitive word expected, got '%+A'." primitiveWord)
 
     let dispatchWord (state : State) =

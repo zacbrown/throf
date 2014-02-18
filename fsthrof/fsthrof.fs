@@ -411,6 +411,13 @@ module Interpreter =
                         Parser.Boolean (doComparisonOperation operation lvalue rvalue) :: rest
                         |> state.withNewStack
                     | _ -> raiseInvalidOperation left right
+
+                | Parser.Boolean lvalue ->
+                    match right with
+                    | Parser.Boolean rvalue ->
+                        Parser.Boolean (doComparisonOperation operation lvalue rvalue) :: rest
+                        |> state.withNewStack
+                    | _ -> raiseInvalidOperation left right
                 | _ -> raiseInvalidOperation left right
 
         let mathAndStringOperations (state : State) operation =

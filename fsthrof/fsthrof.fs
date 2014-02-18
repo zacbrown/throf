@@ -333,13 +333,14 @@ module Interpreter =
             | Division
             | Multiplication
             | Modulo
-        and BooleanOperation =
+        and ComparisonOperation =
             | LessThan
             | LessThanOrEqual
             | GreaterThan
             | GreaterThanOrEqual
             | Equal
             | NotEqual
+        and BooleanOperation =
             | And
             | Or
             | Xor
@@ -352,7 +353,7 @@ module Interpreter =
             | Division -> left / right
             | Modulo -> left % right
 
-        let inline doBooleanOperation (operation : BooleanOperation) left right =
+        let inline doComparisonOperation (operation : ComparisonOperation) left right =
             match operation with
             | LessThan -> left < right
             | LessThanOrEqual -> left <= right
@@ -360,6 +361,9 @@ module Interpreter =
             | GreaterThanOrEqual -> left >= right
             | Equal -> left = right
             | NotEqual -> left <> right
+
+        let inline doBooleanOperation (operation : BooleanOperation) left right =
+            match operation with
             | And -> left && right
             | Or -> left || right
             | Xor -> (left && not right) || (not left && right)
@@ -367,7 +371,7 @@ module Interpreter =
         let raiseInvalidOperation left right =
             raise <| InvalidOperation (sprintf "Types '%+A' and '%+A' cannot be added together." left right)
 
-        let booleanOperations ( state : State) operation =
+        let booleanOperations (state : State) operation =
             match state.Stack with
             | [] | [_] -> raiseStackUnderflow state
             | (left :: right :: rest) ->
@@ -375,6 +379,39 @@ module Interpreter =
                 let rvalue = right.IsTruthy()
                 Parser.Boolean (doBooleanOperation operation lvalue rvalue) :: rest
                 |> state.withNewStack
+
+        let comparisonOperation (state : State) operation =
+            match state.Stack with
+            | [] | [_] -> raiseStackUnderflow state
+            | (left :: right :: rest) ->
+                match left with
+                | Parser.Integer lvalue ->
+                    match right with
+                    | Parser.Integer rvalue ->
+                        Parser.Boolean (doComparisonOperation operation lvalue rvalue) :: rest
+                        |> state.withNewStack
+                    | Parser.Real rvalue ->
+                        Parser.Boolean (doComparisonOperation operation (double lvalue) rvalue) :: rest
+                        |> state.withNewStack
+                    | _ -> raiseInvalidOperation left right
+
+                | Parser.Real lvalue ->
+                    match right with
+                    | Parser.Real rvalue ->
+                        Parser.Boolean (doComparisonOperation operation lvalue rvalue) :: rest
+                        |> state.withNewStack
+                    | Parser.Integer rvalue ->
+                        Parser.Boolean (doComparisonOperation operation lvalue (double rvalue)) :: rest
+                        |> state.withNewStack
+                    | _ -> raiseInvalidOperation left right
+
+                | Parser.StringLiteral lvalue ->
+                    match right with
+                    | Parser.StringLiteral rvalue ->
+                        Parser.Boolean (doComparisonOperation operation lvalue rvalue) :: rest
+                        |> state.withNewStack
+                    | _ -> raiseInvalidOperation left right
+                | _ -> raiseInvalidOperation left right
 
         let mathAndStringOperations (state : State) operation =
             match state.Stack with
@@ -428,12 +465,12 @@ module Interpreter =
         | "*" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Multiplication
         | "/" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Division
         | "mod" -> PrimitiveWords.mathAndStringOperations state PrimitiveWords.Modulo
-        | "<" -> PrimitiveWords.booleanOperations state PrimitiveWords.LessThan
-        | ">" -> PrimitiveWords.booleanOperations state PrimitiveWords.GreaterThan
-        | "<=" -> PrimitiveWords.booleanOperations state PrimitiveWords.LessThanOrEqual
-        | ">=" -> PrimitiveWords.booleanOperations state PrimitiveWords.GreaterThanOrEqual
-        | "=" -> PrimitiveWords.booleanOperations state PrimitiveWords.Equal
-        | "<>" -> PrimitiveWords.booleanOperations state PrimitiveWords.NotEqual
+        | "<" -> PrimitiveWords.comparisonOperation state PrimitiveWords.LessThan
+        | ">" -> PrimitiveWords.comparisonOperation state PrimitiveWords.GreaterThan
+        | "<=" -> PrimitiveWords.comparisonOperation state PrimitiveWords.LessThanOrEqual
+        | ">=" -> PrimitiveWords.comparisonOperation state PrimitiveWords.GreaterThanOrEqual
+        | "=" -> PrimitiveWords.comparisonOperation state PrimitiveWords.Equal
+        | "<>" -> PrimitiveWords.comparisonOperation state PrimitiveWords.NotEqual
         | "not" -> PrimitiveWords.notWord state
         | "and" -> PrimitiveWords.booleanOperations state PrimitiveWords.And
         | "or" -> PrimitiveWords.booleanOperations state PrimitiveWords.Or

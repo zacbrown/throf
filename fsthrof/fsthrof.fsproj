@@ -45,6 +45,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Utility.fs" />
+    <Compile Include="Tokenizer.fs" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="Interpreter.fs" />
     <Compile Include="fsthrof.fs" />
     <None Include="App.config" />
   </ItemGroup>

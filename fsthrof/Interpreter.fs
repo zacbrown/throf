@@ -40,7 +40,7 @@ module Interpreter =
     module PrimitiveWords =
         let private raiseStackUnderflow (state : State) =
             let (_, stack, stream) = getInterpreterState state
-            raise <| StackUnderflow(stack, stream)
+            raise <| Errors.StackUnderflow(stack, stream)
 
         let ifWord (state : State) = 
             match state.Stack with
@@ -50,12 +50,12 @@ module Interpreter =
                 | Parser.Real 0.0 | Parser.Integer 0 | Parser.Boolean false ->
                     match falseQuotation with
                     | Parser.Quotation q -> applyQuotationToStack q state
-                    | _ -> raise <| UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" falseQuotation)
+                    | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" falseQuotation)
                 | Parser.Word _ | Parser.Quotation _ | Parser.StringLiteral _ | Parser.Integer _ | Parser.Real _ | Parser.Boolean _ ->
                     match trueQuotation with
                     | Parser.Quotation q -> applyQuotationToStack q state
-                    | _ -> raise <| UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" trueQuotation)
-                | _ -> raise <| UnexpectedParserNode (sprintf "%+A" predicate)
+                    | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" trueQuotation)
+                | _ -> raise <| Errors.UnexpectedParserNode (sprintf "%+A" predicate)
 
         let  dropWord (state : State) =
             match state.Stack with
@@ -76,7 +76,7 @@ module Interpreter =
                         printType x
                         printfn " "
                     printfn "]"
-                | _ -> raise <| UnexpectedParserNode (sprintf "The interpreter is in an unexpected state. The parse node '%+A' was unexpected on the stack." elem)
+                | _ -> raise <| Errors.UnexpectedParserNode (sprintf "The interpreter is in an unexpected state. The parse node '%+A' was unexpected on the stack." elem)
             printfn "Stack"
             printfn "============="
             for elem in state.Stack do
@@ -113,7 +113,7 @@ module Interpreter =
                         state.withNewStack (picked :: rest)
                     with
                     | :? System.ArgumentException as ex -> raiseStackUnderflow state
-                | _ -> raise <| IntegerExpected (sprintf "Expected Integer with word 'pick', got %+A" depth)
+                | _ -> raise <| Errors.IntegerExpected (sprintf "Expected Integer with word 'pick', got %+A" depth)
 
         let notWord (state : State) =
             match state.Stack with
@@ -164,7 +164,7 @@ module Interpreter =
             | Xor -> (left && not right) || (not left && right)
 
         let raiseInvalidOperation left right =
-            raise <| InvalidOperation (sprintf "Types '%+A' and '%+A' cannot be added together." left right)
+            raise <| Errors.InvalidOperation (sprintf "Types '%+A' and '%+A' cannot be added together." left right)
 
         let booleanOperations (state : State) operation =
             match state.Stack with
@@ -277,13 +277,13 @@ module Interpreter =
         | "and" -> PrimitiveWords.booleanOperations state PrimitiveWords.And
         | "or" -> PrimitiveWords.booleanOperations state PrimitiveWords.Or
         | "xor" -> PrimitiveWords.booleanOperations state PrimitiveWords.Xor
-        | _ -> raise <| InvalidOperation (sprintf "Primitive word expected, got '%+A'." primitiveWord)
+        | _ -> raise <| Errors.InvalidOperation (sprintf "Primitive word expected, got '%+A'." primitiveWord)
 
     let dispatchWord (state : State) =
         match state.ExecutionStream with
         | [] ->
             let (symTable, stack, stream) = getInterpreterState state
-            raise <| MissingParseNodeInExecutionStream(symTable, stack, stream)
+            raise <| Errors.MissingParseNodeInExecutionStream(symTable, stack, stream)
         | ((node_ : Parser.Node) :: nodes_) ->
             match node_ with
             | Parser.Word name ->
@@ -294,7 +294,7 @@ module Interpreter =
                         SymbolTable = state.SymbolTable }
                 | None -> 
                     dispatchPrimitiveWord name state
-            | _ -> raise <| UnexpectedParserNode (sprintf "%+A" node_)
+            | _ -> raise <| Errors.UnexpectedParserNode (sprintf "%+A" node_)
 
     let pushData (x : Parser.Node) (state : State) =
         state.withNewStack <| x :: state.Stack

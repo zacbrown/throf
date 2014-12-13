@@ -33,5 +33,6 @@ ipch
 .DS_Store
 
 *.bin
+*.exe
 
 *.userprefs

@@ -8,7 +8,7 @@ module Parser =
         | Defer
         | Variable
     and Node =
-        | Directive of directive : string
+        | Directive of directive : Directive
         | Word of data : string
         | Integer of num : int
         | Real of num : double
@@ -25,21 +25,18 @@ module Parser =
         ExecutionStream : list<Node>;
     }
 
-    let private collectUntil (endToken : Tokenizer.Token) (lst : list<Tokenizer.Token>) =
-        let rec collectUntilHelper (lst : list<Tokenizer.Token>) acc =
-            match lst with
-            | [] -> ([], acc)
-            | (x :: xs) ->
-                if endToken = x then (xs, List.rev acc)
-                else collectUntilHelper xs (x :: acc)
-        collectUntilHelper lst []
-
     exception InvalidTokenToNodeTransformation of string
     exception UnexpectedToken of string
+    exception InvalidDirective of string
 
     let private tokenToNode (tok : Tokenizer.Token) =
         match tok with
-        | Tokenizer.Directive directive -> Directive directive
+        | Tokenizer.Directive directive ->
+            match directive with
+            | "include" -> Directive LoadFile
+            | "variable" -> Directive Variable
+            | "defer" -> Directive Defer
+            | str -> raise <| InvalidDirective str
         | Tokenizer.WordOrData data ->
             try
                 let numVal = Int32.Parse data
@@ -61,7 +58,7 @@ module Parser =
         | _ -> raise <| InvalidTokenToNodeTransformation (sprintf "%A" tok)
 
     let private collectQuotation tokens =
-        let (streamRemainder, quotationStream) = (collectUntil Tokenizer.QuotationClose tokens)
+        let (streamRemainder, quotationStream) = (List.takeWhile (fun tok -> Tokenizer.QuotationClose = tok) tokens)
         let quotationNode = Quotation (List.map (fun elem -> tokenToNode elem) quotationStream)
         (streamRemainder, quotationNode)
 
@@ -87,7 +84,7 @@ module Parser =
                 | Tokenizer.WordDefinition ->
                     match toks.Head with
                     | Tokenizer.WordOrData wordName ->
-                        let (streamRemainder, wordDef) = (collectUntil Tokenizer.DefinitionTerminator toks)
+                        let (streamRemainder, wordDef) = (List.takeWhile (fun tok -> Tokenizer.DefinitionTerminator = tok) toks)
                         let newContent = {
                             SymbolTable = content.SymbolTable.Add(wordName, transformTokensToNodes [] wordDef);
                             ExecutionStream = content.ExecutionStream
@@ -95,8 +92,28 @@ module Parser =
                         parseHelper streamRemainder newContent
                     | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)
                 | Tokenizer.Directive _ ->
-                    // todo: Implement directives.
-                    { SymbolTable = Map.empty; ExecutionStream = []}
+                    let parsedDirective = tokenToNode tok
+                    match parsedDirective with
+                    | Directive LoadFile ->
+                        { SymbolTable = Map.empty; ExecutionStream = []}
+                    | Directive Defer ->
+                        match toks with
+                        | (Tokenizer.WordOrData deferredWord :: streamRemainder) ->
+                            let newContent = {
+                                SymbolTable = content.SymbolTable.Add(deferredWord, []);
+                                ExecutionStream = content.ExecutionStream
+                            }
+                            parseHelper streamRemainder newContent
+                        | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)
+                    | Directive Variable ->
+                        match toks with
+                        | (Tokenizer.WordOrData variableName :: value :: streamRemainder) ->
+                            let newContent = {
+                                SymbolTable = content.SymbolTable.Add(variableName, [tokenToNode value]);
+                                ExecutionStream = content.ExecutionStream
+                            }
+                            parseHelper streamRemainder newContent
+                        | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)
                 | Tokenizer.QuotationOpen ->
                     let (streamRemainder, quotationNode) = collectQuotation tokens
                     let newContent = {

@@ -33,9 +33,9 @@ module Parser =
         match tok with
         | Tokenizer.Directive directive ->
             match directive with
-            | "include" -> Directive LoadFile
-            | "variable" -> Directive Variable
-            | "defer" -> Directive Defer
+            | ":include" -> Directive LoadFile
+            | ":variable" -> Directive Variable
+            | ":defer" -> Directive Defer
             | str -> raise <| InvalidDirective str
         | Tokenizer.WordOrData data ->
             try
@@ -95,7 +95,14 @@ module Parser =
                     let parsedDirective = tokenToNode tok
                     match parsedDirective with
                     | Directive LoadFile ->
-                        { SymbolTable = Map.empty; ExecutionStream = []}
+                        match toks with
+                        | (Tokenizer.StringLiteral filename :: streamRemainder) ->
+                            let newContent = {
+                                SymbolTable = content.SymbolTable;
+                                ExecutionStream = (StringLiteral filename :: Directive LoadFile :: content.ExecutionStream)
+                            }
+                            parseHelper streamRemainder newContent
+                        | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)
                     | Directive Defer ->
                         match toks with
                         | (Tokenizer.WordOrData deferredWord :: streamRemainder) ->
@@ -114,6 +121,7 @@ module Parser =
                             }
                             parseHelper streamRemainder newContent
                         | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)
+                    | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)
                 | Tokenizer.QuotationOpen ->
                     let (streamRemainder, quotationNode) = collectQuotation tokens
                     let newContent = {

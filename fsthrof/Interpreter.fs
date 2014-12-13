@@ -30,10 +30,11 @@ module Interpreter =
     let applyQuotationToStack (q : list<Parser.Node>) (state : State) =
         state.withNewStack <| (List.rev q) @ state.Stack
 
+    let raiseStackUnderflow (state : State) =
+        let (_, stack, stream) = getInterpreterState state
+        raise <| Errors.StackUnderflow(stack, stream)
+
     module PrimitiveWords =
-        let private raiseStackUnderflow (state : State) =
-            let (_, stack, stream) = getInterpreterState state
-            raise <| Errors.StackUnderflow(stack, stream)
 
         let ifWord (state : State) = 
             match state.Stack with
@@ -292,8 +293,25 @@ module Interpreter =
     let pushData (x : Parser.Node) (state : State) =
         state.withNewStack <| x :: state.Stack
 
+    let popData (state : State) =
+        match state.Stack with
+        | (top :: rest) -> (top, state.withNewStack <| rest)
+        | _ -> raiseStackUnderflow state
+
     let executeDirective (x : Parser.Node) (state : State) =
-        state
+        match x with
+        | Parser.Directive Parser.LoadFile ->
+            let (fileNameNode, newState) = popData state
+            match fileNameNode with
+            | Parser.StringLiteral fileName ->
+                let parsedContent = Parser.parse <| Tokenizer.tokenize(fileName)
+                {
+                    SymbolTable = Map.join <| newState.SymbolTable <| parsedContent.SymbolTable;
+                    ExecutionStream = parsedContent.ExecutionStream @ newState.ExecutionStream;
+                    Stack = newState.Stack
+                }
+            | _ -> raise <| Errors.UnexpectedParserNode (sprintf "Expecting StringLiteral, got %+A" fileNameNode)
+        | _ -> raise <| Errors.UnexpectedDirective (sprintf "%+A" x)
 
     let interpret (state : State) =
         let rec interpretHelper (state_ : State) =
@@ -311,9 +329,7 @@ module Interpreter =
                     interpretHelper { SymbolTable = updatedState.SymbolTable;
                         ExecutionStream = xs; Stack = updatedState.Stack }
                 | Parser.Directive _ ->
-                    let updatedState = executeDirective x state_
-                    interpretHelper { SymbolTable = updatedState.SymbolTable;
-                        ExecutionStream = xs; Stack = updatedState.Stack }
+                    interpretHelper <| executeDirective x { SymbolTable = state_.SymbolTable; ExecutionStream = xs; Stack = state_.Stack }
         interpretHelper state
 
     let loadFile (state : State) (filename : string) =

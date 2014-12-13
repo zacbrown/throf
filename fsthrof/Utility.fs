@@ -1,21 +1,19 @@
 ﻿namespace FSThrof
 
-module Utility =
-
-    let dropUntil endPattern lst =
-        let rec dropUntilHelper = function
+module List =
+    let skipWhile (pred:'a -> bool) (lst:'a list) =
+        let rec skipWhileHelper = function
         | [] -> []
         | (x :: xs) ->
-            if endPattern = x then xs
-            else dropUntilHelper xs
-        dropUntilHelper lst
+            if pred x then xs
+            else skipWhileHelper xs
+        skipWhileHelper lst
 
-    let private collectUntil endPattern lst =
-        let rec collectUntilHelper lst acc =
+    let takeWhile (pred:'a -> bool) (lst:'a list) =
+        let rec takeWhileHelper lst acc =
             match lst with
             | [] -> ([], acc)
             | (x :: xs) ->
-                if endPattern = x then (xs, List.rev (x :: acc))
-                else collectUntilHelper xs (x :: acc)
-        collectUntilHelper lst []
-
+                if pred x then (xs, List.rev (x :: acc))
+                else takeWhileHelper xs (x :: acc)
+        takeWhileHelper lst []

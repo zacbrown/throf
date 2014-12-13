@@ -35,18 +35,20 @@ module Tokenizer =
     let removeStackComments (tokens : list<string>) =
         let rec removeStackCommentsHelper (xs : list<string>) (acc : list<string>) =
             match xs with
-            | [] -> List.rev acc
+            | [] ->
+                if acc = [] then raise <| Errors.CommentNotClosed "Previously opened stack comment was not properly closed."
+                else List.rev acc
             | (tok:string :: toks:list<string>) ->
-                if tok = "(" then removeStackCommentsHelper (Utility.dropUntil ")" toks) acc
+                if tok = "(" then removeStackCommentsHelper (List.skipWhile (fun str -> str = ")") toks) acc
                 else removeStackCommentsHelper toks (tok :: acc)
         removeStackCommentsHelper tokens []
 
     let tokenize (fileToTokenize : string) =
-        let getFileStream = new StreamReader(fileToTokenize)
-        getFileStream.ReadToEnd().Split('\t', ' ', '\n', '\r')
+        let fileStream = new StreamReader(fileToTokenize)
+        fileStream.ReadToEnd().Split('\t', ' ', '\n', '\r')
         |> Seq.filter (fun str -> str <> "")
         |> Seq.toList
-        |> removeStackComments 
+        |> removeStackComments
         |> Seq.map getTokenFromData
         |> Seq.toList
 

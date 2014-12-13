@@ -4,7 +4,5 @@ open FSThrof
 
 [<EntryPoint>]
 let main argv =
-    let tokens = Tokenizer.tokenize(argv.[0])
-    let parsedContent = Parser.parse tokens
-    let interpretedState = Interpreter.interpret { SymbolTable = parsedContent.SymbolTable; ExecutionStream = parsedContent.ExecutionStream; Stack = [] }
+    let foo = Interpreter.loadFile <| { SymbolTable = Map.empty; ExecutionStream = []; Stack = [] } <| argv.[0]
     0

@@ -27,13 +27,6 @@ module Interpreter =
         printfn "%+A" stack
         printfn "%+A" stream
 
-    exception MissingParseNodeInExecutionStream of string * string * string
-    exception UnexpectedParserNode of string
-    exception IntegerExpected of string
-    exception NumericExpected of string
-    exception InvalidOperation of string
-    exception StackUnderflow of string * string
-
     let applyQuotationToStack (q : list<Parser.Node>) (state : State) =
         state.withNewStack <| (List.rev q) @ state.Stack
 
@@ -322,3 +315,11 @@ module Interpreter =
                     interpretHelper { SymbolTable = updatedState.SymbolTable;
                         ExecutionStream = xs; Stack = updatedState.Stack }
         interpretHelper state
+
+    let loadFile (state : State) (filename : string) =
+        let parsedContent = Parser.parse <| Tokenizer.tokenize(filename)
+        interpret { 
+            SymbolTable = Map.join <| state.SymbolTable <| parsedContent.SymbolTable;
+            ExecutionStream = parsedContent.ExecutionStream @ state.ExecutionStream;
+            Stack = state.Stack
+        }

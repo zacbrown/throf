@@ -1,5 +1,9 @@
 ﻿namespace FSThrof
 
+module Map =
+    let join (p:Map<'a,'b>) (q:Map<'a,'b>) = 
+        Map(Seq.concat [ (Map.toSeq p) ; (Map.toSeq q) ])
+
 module List =
     let skipWhile (pred:'a -> bool) (lst:'a list) =
         let rec skipWhileHelper = function

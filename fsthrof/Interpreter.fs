@@ -45,17 +45,15 @@ module Interpreter =
             | [] | [_ ; _] | [_] -> raiseStackUnderflow state
             | (falseQuotation :: trueQuotation :: predicate :: stackRest) ->
                 let newState = state.withNewStack stackRest
-                match predicate with
-                | Parser.Real 0.0 | Parser.Integer 0 | Parser.Boolean false ->
+                if predicate.IsTruthy() then
+                    match trueQuotation with
+                    | Parser.Quotation q -> applyQuotationToStack q newState
+                    | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" trueQuotation)
+                else
                     match falseQuotation with
                     | Parser.Quotation q ->
                         applyQuotationToStack q newState
                     | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" falseQuotation)
-                | Parser.Word _ | Parser.Quotation _ | Parser.StringLiteral _ | Parser.Integer _ | Parser.Real _ | Parser.Boolean _ ->
-                    match trueQuotation with
-                    | Parser.Quotation q -> applyQuotationToStack q newState
-                    | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" trueQuotation)
-                | _ -> raise <| Errors.UnexpectedParserNode (sprintf "%+A" predicate)
 
         let  dropWord (state : State) =
             match state.Stack with

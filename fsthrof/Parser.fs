@@ -58,21 +58,31 @@ module Parser =
         | _ -> raise <| InvalidTokenToNodeTransformation (sprintf "%A" tok)
 
     let private collectQuotation tokens =
-        let (streamRemainder, quotationStream) = (List.takeWhile (fun tok -> Tokenizer.QuotationClose = tok) tokens)
-        let quotationNode = Quotation (List.map (fun elem -> tokenToNode elem) quotationStream)
+        let rec extractQuotationBody (lst : list<Tokenizer.Token>) (acc : list<Tokenizer.Token>) =
+            match lst with
+            | [] -> []
+            | (head :: tl) ->
+                match head with
+                | Tokenizer.QuotationOpen -> extractQuotationBody tl acc
+                | Tokenizer.QuotationClose -> List.rev acc
+                | _ -> extractQuotationBody tl (head :: acc)
+        let (streamRemainder, quotationStream) = (List.takeWhile (fun tok -> Tokenizer.QuotationClose <> tok) tokens)
+        let quotationBody = extractQuotationBody quotationStream []
+        let quotationNode = Quotation (List.map (fun elem -> tokenToNode elem) quotationBody)
         (streamRemainder, quotationNode)
 
-    let rec private transformTokensToNodes acc lst =
+    let rec private transformTokensToNodes lst acc =
         match lst with
         | [] -> List.rev acc
         | ((hd : Tokenizer.Token) :: tl) ->
             match hd with
             | Tokenizer.QuotationOpen ->
                 let (remainingStream, quotationNode) = collectQuotation tl
-                transformTokensToNodes (quotationNode :: acc) remainingStream
-            | Tokenizer.StringLiteral data -> transformTokensToNodes (StringLiteral data :: acc) tl
+                transformTokensToNodes remainingStream (quotationNode :: acc)
+            | Tokenizer.StringLiteral data -> transformTokensToNodes tl (StringLiteral data :: acc)
             | Tokenizer.WordOrData _ ->
-                transformTokensToNodes ((tokenToNode hd) :: acc) tl
+                transformTokensToNodes tl ((tokenToNode hd) :: acc)
+            | Tokenizer.DefinitionTerminator -> List.rev acc
             | _ -> raise <| UnexpectedToken (sprintf "%A" hd)
 
     let parse (tokens : list<Tokenizer.Token>) =
@@ -84,9 +94,9 @@ module Parser =
                 | Tokenizer.WordDefinition ->
                     match toks.Head with
                     | Tokenizer.WordOrData wordName ->
-                        let (streamRemainder, wordDef) = (List.takeWhile (fun tok -> Tokenizer.DefinitionTerminator = tok) toks)
+                        let (streamRemainder, wordDef) = (List.takeWhile (fun tok -> Tokenizer.DefinitionTerminator <> tok) toks.Tail)
                         let newContent = {
-                            SymbolTable = content.SymbolTable.Add(wordName, transformTokensToNodes [] wordDef);
+                            SymbolTable = content.SymbolTable.Add(wordName, transformTokensToNodes wordDef []);
                             ExecutionStream = content.ExecutionStream
                         }
                         parseHelper streamRemainder newContent
@@ -99,7 +109,7 @@ module Parser =
                         | (Tokenizer.StringLiteral filename :: streamRemainder) ->
                             let newContent = {
                                 SymbolTable = content.SymbolTable;
-                                ExecutionStream = (StringLiteral filename :: Directive LoadFile :: content.ExecutionStream)
+                                ExecutionStream = content.ExecutionStream @ [StringLiteral filename; Directive LoadFile]
                             }
                             parseHelper streamRemainder newContent
                         | _ -> raise <| UnexpectedToken (sprintf "%+A" toks.Head)

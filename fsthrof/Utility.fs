@@ -5,6 +5,11 @@ module Map =
         Map(Seq.concat [ (Map.toSeq p) ; (Map.toSeq q) ])
 
 module List =
+    let rec last = function
+        | hd :: [] -> hd
+        | hd :: tl -> last tl
+        | [] -> []
+
     let skipWhile (pred:'a -> bool) (lst:'a list) =
         let rec skipWhileHelper = function
         | [] -> []
@@ -18,6 +23,6 @@ module List =
             match lst with
             | [] -> ([], acc)
             | (x :: xs) ->
-                if pred x then (xs, List.rev (x :: acc))
-                else takeWhileHelper xs (x :: acc)
+                if pred x then takeWhileHelper xs (x :: acc)
+                else (xs, List.rev (x :: acc))
         takeWhileHelper lst []

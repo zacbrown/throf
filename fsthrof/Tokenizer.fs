@@ -47,9 +47,7 @@ module Tokenizer =
         let fileStream = new StreamReader(fileToTokenize)
         fileStream.ReadToEnd().Split('\n', '\r')
         |> Seq.filter (fun str -> str.StartsWith("#") = false)
-        |> Seq.toList
         |> Seq.collect (fun str -> str.Split(' ', '\t'))
-        |> Seq.map (fun str -> printfn "%+A" str; str)
         |> Seq.filter (fun str -> str <> "")
         |> Seq.toList
         |> removeStackComments

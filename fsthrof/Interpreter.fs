@@ -12,6 +12,10 @@ module Interpreter =
             { SymbolTable = this.SymbolTable; ExecutionStream = this.ExecutionStream;
                 Stack = stack }
 
+        member this.withNewExecutionStream(executionStream) =
+            { SymbolTable = this.SymbolTable; ExecutionStream = executionStream;
+                Stack = this.Stack }
+
     let getInterpreterState (state : State) =
         let symTable =
             Map.fold (fun acc key value -> acc + sprintf "%+A - %+A" key value) "" state.SymbolTable
@@ -39,15 +43,17 @@ module Interpreter =
         let ifWord (state : State) = 
             match state.Stack with
             | [] | [_ ; _] | [_] -> raiseStackUnderflow state
-            | (predicate :: falseQuotation :: trueQuotation :: stack) ->
+            | (falseQuotation :: trueQuotation :: predicate :: stackRest) ->
+                let newState = state.withNewStack stackRest
                 match predicate with
                 | Parser.Real 0.0 | Parser.Integer 0 | Parser.Boolean false ->
                     match falseQuotation with
-                    | Parser.Quotation q -> applyQuotationToStack q state
+                    | Parser.Quotation q ->
+                        applyQuotationToStack q newState
                     | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" falseQuotation)
                 | Parser.Word _ | Parser.Quotation _ | Parser.StringLiteral _ | Parser.Integer _ | Parser.Real _ | Parser.Boolean _ ->
                     match trueQuotation with
-                    | Parser.Quotation q -> applyQuotationToStack q state
+                    | Parser.Quotation q -> applyQuotationToStack q newState
                     | _ -> raise <| Errors.UnexpectedParserNode (sprintf "'if' must be provided quotations for true & false conditions, got: %+A" trueQuotation)
                 | _ -> raise <| Errors.UnexpectedParserNode (sprintf "%+A" predicate)
 
@@ -59,23 +65,23 @@ module Interpreter =
         let stackWord (state : State) =
             let rec printType (elem : Parser.Node) =
                 match elem with
-                | Parser.Integer value -> printfn "%d" value
-                | Parser.Real value -> printfn "%f" value
-                | Parser.Boolean value -> printfn "%b" value
-                | Parser.StringLiteral value -> printfn "\"%s\"" value
-                | Parser.Word value -> printfn "%s" value
+                | Parser.Integer value -> printf "%d" value
+                | Parser.Real value -> printf "%f" value
+                | Parser.Boolean value -> printf "%b" value
+                | Parser.StringLiteral value -> printf "\"%s\"" value
+                | Parser.Word value -> printf "%s" value
                 | Parser.Quotation value ->
-                    printf "["
+                    printf "[ "
                     for x in value do
                         printType x
-                        printfn " "
-                    printfn "]"
+                        printf " "
+                    printf "]"
                 | _ -> raise <| Errors.UnexpectedParserNode (sprintf "The interpreter is in an unexpected state. The parse node '%+A' was unexpected on the stack." elem)
             printfn "Stack"
             printfn "============="
             for elem in state.Stack do
                 printType elem
-            printfn ""
+                printfn ""
             state
 
         let swapWord (state : State) =
@@ -172,7 +178,7 @@ module Interpreter =
         let comparisonOperation (state : State) operation =
             match state.Stack with
             | [] | [_] -> raiseStackUnderflow state
-            | (left :: right :: rest) ->
+            | (right :: left :: rest) ->
                 match left with
                 | Parser.Integer lvalue ->
                     match right with
@@ -212,7 +218,7 @@ module Interpreter =
         let mathAndStringOperations (state : State) operation =
             match state.Stack with
             | [] | [_] -> raiseStackUnderflow state
-            | (left :: right :: rest) ->
+            | (right :: left :: rest) ->
                 match left with
                 | Parser.Integer lvalue ->
                     match right with
@@ -278,17 +284,15 @@ module Interpreter =
         | [] ->
             let (symTable, stack, stream) = getInterpreterState state
             raise <| Errors.MissingParseNodeInExecutionStream(symTable, stack, stream)
-        | ((node_ : Parser.Node) :: nodes_) ->
-            match node_ with
+        | ((node : Parser.Node) :: nodes) ->
+            match node with
             | Parser.Word name ->
                 match Map.tryFind name state.SymbolTable with
                 | Some wordDef -> 
-                    { ExecutionStream = wordDef @ state.ExecutionStream;
-                        Stack = state.Stack;
-                        SymbolTable = state.SymbolTable }
+                    state.withNewExecutionStream <| wordDef @ nodes
                 | None -> 
-                    dispatchPrimitiveWord name state
-            | _ -> raise <| Errors.UnexpectedParserNode (sprintf "%+A" node_)
+                    dispatchPrimitiveWord name (state.withNewExecutionStream nodes)
+            | _ -> raise <| Errors.UnexpectedParserNode (sprintf "%+A" node)
 
     let pushData (x : Parser.Node) (state : State) =
         state.withNewStack <| x :: state.Stack
@@ -314,22 +318,20 @@ module Interpreter =
         | _ -> raise <| Errors.UnexpectedDirective (sprintf "%+A" x)
 
     let interpret (state : State) =
-        let rec interpretHelper (state_ : State) =
-            match state_.ExecutionStream with
-            | [] -> state_
+        let rec interpretHelper (state : State) =
+            match state.ExecutionStream with
+            | [] -> state
             | (x :: xs) ->
                 match x with
                 | Parser.Word _ ->
-                    let updatedState = dispatchWord state_
-                    interpretHelper { SymbolTable = updatedState.SymbolTable;
-                        ExecutionStream = xs; Stack = updatedState.Stack } 
+                    let updatedState = dispatchWord state
+                    interpretHelper updatedState
                 | Parser.Real _ | Parser.Integer _ | Parser.Boolean _
                 | Parser.StringLiteral _ | Parser.Quotation _ ->
-                    let updatedState = pushData x state_
-                    interpretHelper { SymbolTable = updatedState.SymbolTable;
-                        ExecutionStream = xs; Stack = updatedState.Stack }
+                    let updatedState = pushData x state
+                    interpretHelper <| updatedState.withNewExecutionStream xs
                 | Parser.Directive _ ->
-                    interpretHelper <| executeDirective x { SymbolTable = state_.SymbolTable; ExecutionStream = xs; Stack = state_.Stack }
+                    interpretHelper <| executeDirective x (state.withNewExecutionStream xs)
         interpretHelper state
 
     let loadFile (state : State) (filename : string) =

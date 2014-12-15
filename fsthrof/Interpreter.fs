@@ -98,7 +98,7 @@ module Interpreter =
             match state.Stack with
             | [] | [_] | [_; _] -> raiseStackUnderflow state
             | (first :: second :: third :: rest) ->
-                state.withNewStack (second :: third :: first :: rest)
+                state.withNewStack (third :: first :: second :: rest)
 
         let pickWord (state : State) =
             match state.Stack with

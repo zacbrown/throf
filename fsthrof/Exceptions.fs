@@ -14,4 +14,5 @@ module Errors =
     exception InvalidOperation of string
     exception StackUnderflow of string * string
     exception UnexpectedDirective of string
+    exception UnterminatedStringLiteral
 

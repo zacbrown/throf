@@ -14,7 +14,7 @@ module Tokenizer =
 
     exception InvalidToken of string
 
-    let getTokenFromData (token : string) =
+    let private getTokenFromData (token : string) =
         let listFormToken = Seq.toList token
         match listFormToken with
         | ':' :: [] -> WordDefinition
@@ -32,7 +32,7 @@ module Tokenizer =
             | _ -> WordOrData token
         | _ -> raise <| InvalidToken(token)
 
-    let removeStackComments (tokens : list<string>) =
+    let private removeStackComments (tokens : list<string>) =
         let rec removeStackCommentsHelper (xs : list<string>) (acc : list<string>) =
             match xs with
             | [] ->
@@ -43,10 +43,23 @@ module Tokenizer =
                 else removeStackCommentsHelper toks (tok :: acc)
         removeStackCommentsHelper tokens []
 
+    let private collapseStringLiterals (stream : seq<string>) =
+        let rec collapseStringLiteralsHelper (pred: string -> bool) (prev : list<string>) (acc : list<string>) (rest : list<string>) =
+            match rest with
+            | [] -> raise Errors.UnterminatedStringLiteral
+            | head :: tail ->
+                if pred (head) then
+                    let newAcc = List.rev (head :: acc)
+                    let (collapsedStringLiteral : string) = List.reduce (fun str1 str2 -> str1 + str2) newAcc
+                    (List.rev (collapsedStringLiteral :: prev)) @ rest
+                else collapseStringLiteralsHelper pred prev (head :: acc) tail
+        collapseStringLiteralsHelper (fun str -> str.EndsWith("\"")) [] [] (List.ofSeq stream)
+
     let tokenize (fileToTokenize : string) =
         let fileStream = new StreamReader(fileToTokenize)
         fileStream.ReadToEnd().Split('\n', '\r')
         |> Seq.filter (fun str -> str.StartsWith("#") = false)
+        |> collapseStringLiterals
         |> Seq.collect (fun str -> str.Split(' ', '\t'))
         |> Seq.filter (fun str -> str <> "")
         |> Seq.toList

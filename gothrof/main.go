@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"container/list"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -14,7 +18,9 @@ func main() {
 	file := os.Args[1]
 	dat, _ := getFileAsString(file)
 
-	tokens := tokenize(dat)
+	tokenize(dat)
+
+	return
 }
 
 func usage() {

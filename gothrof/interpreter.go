@@ -43,7 +43,13 @@ const (
 	OP_SEMICOLON = iota // immediate word
 	OP_BRANCH    = iota
 	OP_ZBRANCH   = iota
+	OP_IMMEDIATE = iota
 )
+
+type Word struct {
+	name       string
+	definition func(interpreter *Interpreter)
+}
 
 type Interpreter struct {
 	dstack    Stack     // data stack
@@ -55,7 +61,27 @@ type Interpreter struct {
 }
 
 func (i *Interpreter) Init(tokens list.List) {
+	i.stream = tokens
+}
 
+func (i *Interpreter) Execute() {
+
+}
+
+func (i *Interpreter) addWordToDictionary(name string,
+	definition func(interpreter *Interpreter)) {
+
+	i.latest.PushBack(&Word{name, definition})
+}
+
+func (i *Interpreter) findWordInDictionary(name string) *Word {
+	for front := i.latest.Front(); front != nil; front = front.Next() {
+		if front.Value.(*Word).name == name {
+			return front.Value.(*Word)
+		}
+	}
+
+	return nil
 }
 
 func (i *Interpreter) rpush(val interface{}) {

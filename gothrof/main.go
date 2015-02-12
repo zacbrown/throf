@@ -18,7 +18,8 @@ func main() {
 	file := os.Args[1]
 	dat, _ := getFileAsString(file)
 
-	tokenize(dat)
+	interpreter := &Interpreter{}
+	interpreter.Init(tokenize(dat))
 
 	return
 }

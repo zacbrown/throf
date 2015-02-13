@@ -50,5 +50,7 @@ func tokenize(input string) list.List {
 		}
 	}
 
+	tokens.PushBack(buffer.String())
+
 	return tokens
 }

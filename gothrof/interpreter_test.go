@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"os"
 	"testing"
 )
@@ -17,10 +16,7 @@ func TestMain(m *testing.M) {
 func TestDrop(t *testing.T) {
 	t.Log("Testing 'drop'")
 
-	toks := list.List{}
-	toks.PushBack("2")
-	toks.PushBack("2")
-	toks.PushBack("drop")
+	toks := tokenize("2 2 drop")
 	interpreter.Init(toks)
 	interpreter.Execute()
 
@@ -35,13 +31,7 @@ func TestDrop(t *testing.T) {
 func TestSwap(t *testing.T) {
 	t.Log("Testing 'swap'")
 
-	//	toks := tokenize("2 3 swap")
-
-	toks := list.List{}
-	toks.PushBack("2")
-	toks.PushBack("3")
-	toks.PushBack("swap")
-
+	toks := tokenize("2 3 swap")
 	interpreter.Init(toks)
 	interpreter.Execute()
 

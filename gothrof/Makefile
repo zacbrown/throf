@@ -1,6 +1,8 @@
 BIN_NAME=gothrof
 
-all:
+all: build test
+
+build:
 	go build -o $(BIN_NAME)
 
 test:

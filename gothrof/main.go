@@ -20,6 +20,7 @@ func main() {
 
 	interpreter := &Interpreter{}
 	interpreter.Init(tokenize(dat))
+	interpreter.Execute()
 
 	return
 }

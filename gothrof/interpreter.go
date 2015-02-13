@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"fmt"
 )
 
 const (
@@ -62,16 +63,59 @@ type Interpreter struct {
 
 func (i *Interpreter) Init(tokens list.List) {
 	i.stream = tokens
+	i.dstack = Stack{}
+	i.rstack = Stack{}
+
+	i.addWordToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
+	i.addWordToDictionary("swap", func(inter *Interpreter) {
+		top := inter.dpop()
+		next := inter.dpop()
+		inter.dpush(top)
+		inter.dpush(next)
+	})
+	i.addWordToDictionary("dup", func(inter *Interpreter) {
+		inter.dpush(inter.dpeek())
+	})
+	i.addWordToDictionary("over", func(inter *Interpreter) {
+		inter.dstack.InsertAfter(1, inter.dpeek())
+	})
+	i.addWordToDictionary("rot", func(inter *Interpreter) {
+		top := inter.dpop()
+		inter.dstack.InsertAfter(2, top)
+	})
+}
+
+func (i *Interpreter) DumpStack() {
+	fmt.Println("Stack")
+	fmt.Println("==============")
+	for cur := i.dstack.top; cur != nil; cur = cur.next {
+		fmt.Printf("%v\n", cur)
+	}
+}
+
+func (i *Interpreter) GetDStack() *Stack {
+	return &i.dstack
+}
+
+func (i *Interpreter) GetRStack() *Stack {
+	return &i.rstack
 }
 
 func (i *Interpreter) Execute() {
-
+	for current := i.stream.Front(); current != nil; current = current.Next() {
+		word := i.findWordInDictionary(current.Value.(string))
+		if word == nil {
+			i.dpush(current.Value.(string))
+		} else {
+			word.definition(i)
+		}
+	}
 }
 
 func (i *Interpreter) addWordToDictionary(name string,
 	definition func(interpreter *Interpreter)) {
 
-	i.latest.PushBack(&Word{name, definition})
+	i.latest.PushFront(&Word{name, definition})
 }
 
 func (i *Interpreter) findWordInDictionary(name string) *Word {
@@ -98,4 +142,8 @@ func (i *Interpreter) dpush(val interface{}) {
 
 func (i *Interpreter) dpop() interface{} {
 	return i.dstack.Pop()
+}
+
+func (i *Interpreter) dpeek() interface{} {
+	return i.dstack.Peek()
 }

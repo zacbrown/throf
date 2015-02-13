@@ -35,3 +35,14 @@ func (s *Stack) Pop() (val interface{}) {
 	}
 	return nil
 }
+
+func (s *Stack) InsertAfter(depth int, val interface{}) {
+
+	current := s.top
+	for ii := 0; ii < depth; ii++ {
+		current = current.next
+	}
+
+	elem := &Node{val, current.next}
+	current.next = elem
+}

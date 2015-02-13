@@ -53,15 +53,15 @@ type Word struct {
 }
 
 type Interpreter struct {
-	dstack    Stack     // data stack
-	rstack    Stack     // return stack
-	stream    list.List // token stream
-	latest    list.List // dictionary head
-	base      int       // current base for printing/reading numbers
-	immediate bool      // signal for whether IMMEDIATE mode is on
+	dstack    Stack      // data stack
+	rstack    Stack      // return stack
+	stream    *list.List // token stream
+	latest    list.List  // dictionary head
+	base      int        // current base for printing/reading numbers
+	immediate bool       // signal for whether IMMEDIATE mode is on
 }
 
-func (i *Interpreter) Init(tokens list.List) {
+func (i *Interpreter) Init(tokens *list.List) {
 	i.stream = tokens
 	i.dstack = Stack{}
 	i.rstack = Stack{}
@@ -101,14 +101,26 @@ func (i *Interpreter) GetRStack() *Stack {
 	return &i.rstack
 }
 
+func (i *Interpreter) Step() bool {
+	current := i.stream.Front()
+
+	if current == nil {
+		return false
+	}
+
+	word := i.findWordInDictionary(current.Value.(string))
+	if word == nil {
+		i.dpush(current.Value.(string))
+	} else {
+		word.definition(i)
+	}
+
+	i.stream.Remove(current)
+	return true
+}
+
 func (i *Interpreter) Execute() {
-	for current := i.stream.Front(); current != nil; current = current.Next() {
-		word := i.findWordInDictionary(current.Value.(string))
-		if word == nil {
-			i.dpush(current.Value.(string))
-		} else {
-			word.definition(i)
-		}
+	for i.Step() == true {
 	}
 }
 

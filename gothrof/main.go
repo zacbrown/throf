@@ -34,10 +34,10 @@ func getFileAsString(file string) (string, error) {
 	return string(data), err
 }
 
-func tokenize(input string) list.List {
+func tokenize(input string) *list.List {
 	reader := strings.NewReader(input)
 	var buffer bytes.Buffer
-	var tokens list.List
+	tokens := &list.List{}
 
 	for ch, _, err := reader.ReadRune(); err == nil; ch, _, err = reader.ReadRune() {
 		if ch == '\t' || ch == ' ' || ch == '\n' || ch == '\r' || ch == '\f' {

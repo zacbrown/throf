@@ -53,8 +53,8 @@ type Word struct {
 }
 
 type Interpreter struct {
-	dstack    Stack      // data stack
-	rstack    Stack      // return stack
+	dstack    *Stack     // data stack
+	rstack    *Stack     // return stack
 	stream    *list.List // token stream
 	latest    list.List  // dictionary head
 	base      int        // current base for printing/reading numbers
@@ -63,8 +63,8 @@ type Interpreter struct {
 
 func (i *Interpreter) Init(tokens *list.List) {
 	i.stream = tokens
-	i.dstack = Stack{}
-	i.rstack = Stack{}
+	i.dstack = &Stack{}
+	i.rstack = &Stack{}
 
 	i.addWordToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
 	i.addWordToDictionary("swap", func(inter *Interpreter) {
@@ -77,11 +77,12 @@ func (i *Interpreter) Init(tokens *list.List) {
 		inter.dpush(inter.dpeek())
 	})
 	i.addWordToDictionary("over", func(inter *Interpreter) {
-		inter.dstack.InsertAfter(1, inter.dpeek())
+		elem := inter.dstack.GetAt(1)
+		inter.dpush(elem)
 	})
 	i.addWordToDictionary("rot", func(inter *Interpreter) {
-		top := inter.dpop()
-		inter.dstack.InsertAfter(2, top)
+		elem := inter.dstack.RemoveAt(2)
+		inter.dpush(elem)
 	})
 }
 
@@ -94,11 +95,11 @@ func (i *Interpreter) DumpStack() {
 }
 
 func (i *Interpreter) GetDStack() *Stack {
-	return &i.dstack
+	return i.dstack
 }
 
 func (i *Interpreter) GetRStack() *Stack {
-	return &i.rstack
+	return i.rstack
 }
 
 func (i *Interpreter) Step() bool {

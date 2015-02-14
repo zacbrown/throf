@@ -45,4 +45,27 @@ func (s *Stack) InsertAfter(depth int, val interface{}) {
 
 	elem := &Node{val, current.next}
 	current.next = elem
+	s.size++
+}
+
+func (s *Stack) GetAt(depth int) interface{} {
+	current := s.top
+	for ii := 0; ii < depth; ii++ {
+		current = current.next
+	}
+
+	return current.value
+}
+
+func (s *Stack) RemoveAt(depth int) interface{} {
+	previousNode := s.top
+	for ii := 0; ii < depth-1; ii++ {
+		previousNode = previousNode.next
+	}
+
+	elem := previousNode.next.value
+	previousNode.next = previousNode.next.next
+	s.size--
+
+	return elem
 }

@@ -88,6 +88,10 @@ func (i *Interpreter) Init(tokens *list.List) {
 		elem := inter.dpop()
 		inter.dstack.InsertAfter(1, elem)
 	})
+	i.addWordToDictionary("2drop", func(inter *Interpreter) {
+		inter.dpop()
+		inter.dpop()
+	})
 }
 
 func (i *Interpreter) DumpStack() {

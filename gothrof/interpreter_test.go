@@ -131,3 +131,13 @@ func TestNRot(t *testing.T) {
 		t.Fatalf("Expected order of 2, 1, 3 for stack, got %s, %s, %s", first, second, third)
 	}
 }
+
+func Test2Drop(t *testing.T) {
+	toks := tokenize("1 2 2drop")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 0)
+}

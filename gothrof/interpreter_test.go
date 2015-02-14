@@ -113,3 +113,21 @@ func TestRot(t *testing.T) {
 		t.Fatalf("Expected order of 2, 3, 1 for stack, got %s, %s, %s", first, second, third)
 	}
 }
+
+func TestNRot(t *testing.T) {
+	toks := tokenize("1 2 3 -rot")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 3)
+
+	first := dstack.Pop()
+	second := dstack.Pop()
+	third := dstack.Pop()
+
+	if first != "2" || second != "1" || third != "3" {
+		t.Fatalf("Expected order of 2, 1, 3 for stack, got %s, %s, %s", first, second, third)
+	}
+}

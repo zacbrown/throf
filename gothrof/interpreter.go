@@ -84,6 +84,10 @@ func (i *Interpreter) Init(tokens *list.List) {
 		elem := inter.dstack.RemoveAt(2)
 		inter.dpush(elem)
 	})
+	i.addWordToDictionary("-rot", func(inter *Interpreter) {
+		elem := inter.dpop()
+		inter.dstack.InsertAfter(1, elem)
+	})
 }
 
 func (i *Interpreter) DumpStack() {

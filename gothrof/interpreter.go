@@ -92,6 +92,12 @@ func (i *Interpreter) Init(tokens *list.List) {
 		inter.dpop()
 		inter.dpop()
 	})
+	i.addWordToDictionary("2dup", func(inter *Interpreter) {
+		elem1 := inter.dstack.GetAt(1)
+		elem2 := inter.dpeek()
+		inter.dpush(elem1)
+		inter.dpush(elem2)
+	})
 }
 
 func (i *Interpreter) DumpStack() {

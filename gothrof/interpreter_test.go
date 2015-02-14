@@ -141,3 +141,22 @@ func Test2Drop(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 0)
 }
+
+func Test2Dup(t *testing.T) {
+	toks := tokenize("1 2 2dup")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 4)
+
+	first := dstack.Pop()
+	second := dstack.Pop()
+	third := dstack.Pop()
+	fourth := dstack.Pop()
+
+	if first != "2" || second != "1" || third != "2" || fourth != "1" {
+		t.Fatalf("Expected 1, 2, 1, 2 for stack, got %s, %s, %s, %s", fourth, third, second, first)
+	}
+}

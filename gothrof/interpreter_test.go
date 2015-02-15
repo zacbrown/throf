@@ -27,7 +27,7 @@ func TestDrop(t *testing.T) {
 	dstack := interpreter.GetDStack()
 	validateDepth(t, dstack.Length(), 1)
 
-	if dstack.Peek() != "2" {
+	if dstack.Peek() != 2 {
 		t.Error("Expected top element to be '2'")
 	}
 }
@@ -39,12 +39,12 @@ func TestSwap(t *testing.T) {
 
 	dstack := interpreter.GetDStack()
 	elem := dstack.Pop()
-	if elem != "2" {
+	if elem != 2 {
 		t.Errorf("Expected element '2', got '%v'", elem)
 	}
 
 	elem = dstack.Pop()
-	if elem != "3" {
+	if elem != 3 {
 		t.Errorf("Expected element '3', got '%v'", elem)
 	}
 }
@@ -58,7 +58,7 @@ func TestDup(t *testing.T) {
 	dstack := interpreter.GetDStack()
 
 	top := dstack.Peek()
-	if top != "2" {
+	if top != 2 {
 		t.Fatalf("Expected '2' to be on top of dstack, got %d", top)
 	}
 
@@ -91,7 +91,7 @@ func TestOver(t *testing.T) {
 	second := dstack.Pop()
 	third := dstack.Pop()
 
-	if first != "1" || second != "2" || third != "1" {
+	if first != 1 || second != 2 || third != 1 {
 		t.Fatalf("Expected order of 1, 2, 1 for stack, got %s, %s, %s", first, second, third)
 	}
 }
@@ -109,7 +109,7 @@ func TestRot(t *testing.T) {
 	second := dstack.Pop()
 	third := dstack.Pop()
 
-	if first != "1" || second != "3" || third != "2" {
+	if first != 1 || second != 3 || third != 2 {
 		t.Fatalf("Expected order of 2, 3, 1 for stack, got %s, %s, %s", first, second, third)
 	}
 }
@@ -127,7 +127,7 @@ func TestNRot(t *testing.T) {
 	second := dstack.Pop()
 	third := dstack.Pop()
 
-	if first != "2" || second != "1" || third != "3" {
+	if first != 2 || second != 1 || third != 3 {
 		t.Fatalf("Expected order of 2, 1, 3 for stack, got %s, %s, %s", first, second, third)
 	}
 }
@@ -156,7 +156,38 @@ func Test2Dup(t *testing.T) {
 	third := dstack.Pop()
 	fourth := dstack.Pop()
 
-	if first != "2" || second != "1" || third != "2" || fourth != "1" {
+	if first != 2 || second != 1 || third != 2 || fourth != 1 {
 		t.Fatalf("Expected 1, 2, 1, 2 for stack, got %s, %s, %s, %s", fourth, third, second, first)
+	}
+}
+
+func TestQDup(t *testing.T) {
+	toks := tokenize("1 ?dup")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 2)
+
+	first := dstack.Pop()
+	second := dstack.Pop()
+
+	if first != 1 || second != 1 {
+		t.Fatalf("Expected 1, 1 on the stack, got %s, %s", first, second)
+	}
+
+	toks = tokenize("0 ?dup")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop()
+
+	if elem != 0 {
+		t.Fatalf("Expected 0 on stack, got %s", elem)
 	}
 }

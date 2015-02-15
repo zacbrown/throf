@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"fmt"
+	"strconv"
 )
 
 const (
@@ -98,6 +99,13 @@ func (i *Interpreter) Init(tokens *list.List) {
 		inter.dpush(elem1)
 		inter.dpush(elem2)
 	})
+	i.addWordToDictionary("?dup", func(inter *Interpreter) {
+		elem := inter.dpeek()
+		if elem != 0 {
+			inter.dpush(elem)
+		}
+	})
+
 }
 
 func (i *Interpreter) DumpStack() {
@@ -116,6 +124,27 @@ func (i *Interpreter) GetRStack() *Stack {
 	return i.rstack
 }
 
+// this should only return 'int', 'double' or 'Rational'
+func parseNumeral(content string) interface{} {
+
+	parsedInt, err := strconv.Atoi(content)
+	if err == nil {
+		return parsedInt
+	}
+
+	parsedFloat, err := strconv.ParseFloat(content, 64)
+	if err == nil {
+		return parsedFloat
+	}
+	/*
+		parsedRational, err := ParseRational(content)
+		if err == nil {
+			return parsedRational
+		}
+	*/
+	return nil
+}
+
 func (i *Interpreter) Step() bool {
 	current := i.stream.Front()
 
@@ -125,7 +154,14 @@ func (i *Interpreter) Step() bool {
 
 	word := i.findWordInDictionary(current.Value.(string))
 	if word == nil {
-		i.dpush(current.Value.(string))
+		parsedNum := parseNumeral(current.Value.(string))
+
+		if parsedNum != nil {
+			i.dpush(parsedNum)
+		} else {
+			// just push it on as a string/random thing otherwise
+			i.dpush(current.Value.(string))
+		}
 	} else {
 		word.definition(i)
 	}

@@ -279,3 +279,31 @@ func TestAdd(t *testing.T) {
 	}
 }
 
+func TestSub(t *testing.T) {
+	toks := tokenize("1 2 -")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AsInt()
+
+	if elem != -1 {
+		t.Errorf("Expected '-1' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("1 2.5 -")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	floatElem := dstack.Pop().(Number).AsFloat()
+	if floatElem != -1.5 {
+		t.Errorf("Expected '-1.5' on the stack, got '%f'", floatElem)
+	}
+}

@@ -110,6 +110,11 @@ func (i *Interpreter) Init(tokens *list.List) {
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Add(rhs.(Number)))
 	})
+	i.addWordToDictionary("-", func(inter *Interpreter) {
+		rhs := inter.dpop()
+		lhs := inter.dpop()
+		inter.dpush(lhs.(Number).Sub(rhs.(Number)))
+	})
 	i.addWordToDictionary("incr", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dpush(elem.(Number).Add(NewInt(1)))

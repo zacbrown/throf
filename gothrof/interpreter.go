@@ -101,9 +101,13 @@ func (i *Interpreter) Init(tokens *list.List) {
 	})
 	i.addWordToDictionary("?dup", func(inter *Interpreter) {
 		elem := inter.dpeek()
-		if elem != 0 {
+		if elem.(Number).val != 0 {
 			inter.dpush(elem)
 		}
+	})
+	i.addWordToDictionary("incr", func(inter *Interpreter) {
+		elem := inter.dpop()
+		inter.dpush(elem.(Number).Add(NewInt(1)))
 	})
 
 }
@@ -125,16 +129,16 @@ func (i *Interpreter) GetRStack() *Stack {
 }
 
 // this should only return 'int', 'double' or 'Rational'
-func parseNumeral(content string) interface{} {
+func parseNumeral(content string) (Number, error) {
 
 	parsedInt, err := strconv.Atoi(content)
 	if err == nil {
-		return parsedInt
+		return NewInt(parsedInt), nil
 	}
 
 	parsedFloat, err := strconv.ParseFloat(content, 64)
 	if err == nil {
-		return parsedFloat
+		return NewFloat(parsedFloat), nil
 	}
 	/*
 		parsedRational, err := ParseRational(content)
@@ -142,7 +146,7 @@ func parseNumeral(content string) interface{} {
 			return parsedRational
 		}
 	*/
-	return nil
+	return Number{}, fmt.Errorf("Invalid numeric format: '%s'", content)
 }
 
 func (i *Interpreter) Step() bool {
@@ -154,13 +158,15 @@ func (i *Interpreter) Step() bool {
 
 	word := i.findWordInDictionary(current.Value.(string))
 	if word == nil {
-		parsedNum := parseNumeral(current.Value.(string))
+		dataAsString := current.Value.(string)
 
-		if parsedNum != nil {
+		parsedNum, err := parseNumeral(dataAsString)
+
+		if err == nil {
 			i.dpush(parsedNum)
 		} else {
 			// just push it on as a string/random thing otherwise
-			i.dpush(current.Value.(string))
+			i.dpush(dataAsString)
 		}
 	} else {
 		word.definition(i)

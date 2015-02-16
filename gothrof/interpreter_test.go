@@ -27,7 +27,7 @@ func TestDrop(t *testing.T) {
 	dstack := interpreter.GetDStack()
 	validateDepth(t, dstack.Length(), 1)
 
-	if dstack.Peek() != 2 {
+	if dstack.Peek().(Number).AsInt() != 2 {
 		t.Error("Expected top element to be '2'")
 	}
 }
@@ -38,12 +38,12 @@ func TestSwap(t *testing.T) {
 	interpreter.Execute()
 
 	dstack := interpreter.GetDStack()
-	elem := dstack.Pop()
+	elem := dstack.Pop().(Number).AsInt()
 	if elem != 2 {
 		t.Errorf("Expected element '2', got '%v'", elem)
 	}
 
-	elem = dstack.Pop()
+	elem = dstack.Pop().(Number).AsInt()
 	if elem != 3 {
 		t.Errorf("Expected element '3', got '%v'", elem)
 	}
@@ -57,7 +57,7 @@ func TestDup(t *testing.T) {
 	interpreter.Step()
 	dstack := interpreter.GetDStack()
 
-	top := dstack.Peek()
+	top := dstack.Peek().(Number).AsInt()
 	if top != 2 {
 		t.Fatalf("Expected '2' to be on top of dstack, got %d", top)
 	}
@@ -66,8 +66,8 @@ func TestDup(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 2)
 
-	newTop := dstack.Pop()
-	next := dstack.Pop()
+	newTop := dstack.Pop().(Number).AsInt()
+	next := dstack.Pop().(Number).AsInt()
 
 	if top != next {
 		t.Errorf("Expected the two elements on the dstack to be equal. top: %d, next: %d", top, next)
@@ -87,9 +87,9 @@ func TestOver(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 3)
 
-	first := dstack.Pop()
-	second := dstack.Pop()
-	third := dstack.Pop()
+	first := dstack.Pop().(Number).AsInt()
+	second := dstack.Pop().(Number).AsInt()
+	third := dstack.Pop().(Number).AsInt()
 
 	if first != 1 || second != 2 || third != 1 {
 		t.Fatalf("Expected order of 1, 2, 1 for stack, got %s, %s, %s", first, second, third)
@@ -105,9 +105,9 @@ func TestRot(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 3)
 
-	first := dstack.Pop()
-	second := dstack.Pop()
-	third := dstack.Pop()
+	first := dstack.Pop().(Number).AsInt()
+	second := dstack.Pop().(Number).AsInt()
+	third := dstack.Pop().(Number).AsInt()
 
 	if first != 1 || second != 3 || third != 2 {
 		t.Fatalf("Expected order of 2, 3, 1 for stack, got %s, %s, %s", first, second, third)
@@ -123,9 +123,9 @@ func TestNRot(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 3)
 
-	first := dstack.Pop()
-	second := dstack.Pop()
-	third := dstack.Pop()
+	first := dstack.Pop().(Number).AsInt()
+	second := dstack.Pop().(Number).AsInt()
+	third := dstack.Pop().(Number).AsInt()
 
 	if first != 2 || second != 1 || third != 3 {
 		t.Fatalf("Expected order of 2, 1, 3 for stack, got %s, %s, %s", first, second, third)
@@ -151,10 +151,10 @@ func Test2Dup(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 4)
 
-	first := dstack.Pop()
-	second := dstack.Pop()
-	third := dstack.Pop()
-	fourth := dstack.Pop()
+	first := dstack.Pop().(Number).AsInt()
+	second := dstack.Pop().(Number).AsInt()
+	third := dstack.Pop().(Number).AsInt()
+	fourth := dstack.Pop().(Number).AsInt()
 
 	if first != 2 || second != 1 || third != 2 || fourth != 1 {
 		t.Fatalf("Expected 1, 2, 1, 2 for stack, got %s, %s, %s, %s", fourth, third, second, first)
@@ -170,8 +170,8 @@ func TestQDup(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 2)
 
-	first := dstack.Pop()
-	second := dstack.Pop()
+	first := dstack.Pop().(Number).AsInt()
+	second := dstack.Pop().(Number).AsInt()
 
 	if first != 1 || second != 1 {
 		t.Fatalf("Expected 1, 1 on the stack, got %s, %s", first, second)
@@ -185,9 +185,23 @@ func TestQDup(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem := dstack.Pop()
+	elem := dstack.Pop().(Number).AsInt()
 
 	if elem != 0 {
 		t.Fatalf("Expected 0 on stack, got %s", elem)
+	}
+}
+
+func TestIncr(t *testing.T) {
+	toks := tokenize("1 incr")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	if dstack.Peek().(Number).AsInt() != 2 {
+		t.Fatalf("Expected '2' on the stack, got '%d'", dstack.Peek())
 	}
 }

@@ -13,9 +13,9 @@ func TestMain(m *testing.M) {
 
 }
 
-func validateDepth(t *testing.T, expectedDepth int, actualDepth int) {
+func validateDepth(t *testing.T, actualDepth int, expectedDepth int) {
 	if expectedDepth != actualDepth {
-		t.Fatalf("Expected stack depth of %d", actualDepth)
+		t.Fatalf("Expected stack depth of %d, got %d", expectedDepth, actualDepth)
 	}
 }
 
@@ -205,7 +205,7 @@ func TestIncr(t *testing.T) {
 
 	elem := dstack.Pop().(Number).AsInt()
 	if elem != 2 {
-		t.Fatalf("Expected '2' on the stack, got '%d'", elem)
+		t.Errorf("Expected '2' on the stack, got '%d'", elem)
 	}
 
 	toks = tokenize("1.5 incr")
@@ -218,7 +218,7 @@ func TestIncr(t *testing.T) {
 
 	floatElem := dstack.Pop().(Number).AsFloat()
 	if floatElem != 2.5 {
-		t.Fatalf("Expected '2.5' on the stack, got '%f'", floatElem)
+		t.Errorf("Expected '2.5' on the stack, got '%f'", floatElem)
 	}
 }
 
@@ -233,7 +233,7 @@ func TestDecr(t *testing.T) {
 
 	elem := dstack.Pop().(Number).AsInt()
 	if elem != 0 {
-		t.Fatalf("Expected '0' on the stack, got '%d'", elem)
+		t.Errorf("Expected '0' on the stack, got '%d'", elem)
 	}
 
 	toks = tokenize("1.5 decr")
@@ -246,6 +246,6 @@ func TestDecr(t *testing.T) {
 
 	floatElem := dstack.Pop().(Number).AsFloat()
 	if floatElem != 0.5 {
-		t.Fatalf("Expected '0.5' on the stack, got '%f'", floatElem)
+		t.Errorf("Expected '0.5' on the stack, got '%f'", floatElem)
 	}
 }

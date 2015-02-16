@@ -44,8 +44,19 @@ func (lhs Number) Add(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		newLhs := lhs.val.(float64)
-		newRhs := rhs.val.(float64)
+		var newLhs float64
+		if lhs.numType == IntegerType {
+			newLhs = float64(lhs.AsInt())
+		} else {
+			newLhs = lhs.AsFloat()
+		}
+
+		var newRhs float64
+		if rhs.numType == IntegerType {
+			newRhs = float64(rhs.AsInt())
+		} else {
+			newRhs = rhs.AsFloat()
+		}
 
 		ret := newLhs + newRhs
 		return Number{ret, FloatType}
@@ -60,8 +71,19 @@ func (lhs Number) Sub(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		newLhs := lhs.val.(float64)
-		newRhs := rhs.val.(float64)
+		var newLhs float64
+		if lhs.numType == IntegerType {
+			newLhs = float64(lhs.AsInt())
+		} else {
+			newLhs = lhs.AsFloat()
+		}
+
+		var newRhs float64
+		if rhs.numType == IntegerType {
+			newRhs = float64(rhs.AsInt())
+		} else {
+			newRhs = rhs.AsFloat()
+		}
 
 		ret := newLhs - newRhs
 		return Number{ret, FloatType}
@@ -76,8 +98,19 @@ func (lhs Number) Mul(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		newLhs := lhs.val.(float64)
-		newRhs := rhs.val.(float64)
+		var newLhs float64
+		if lhs.numType == IntegerType {
+			newLhs = float64(lhs.AsInt())
+		} else {
+			newLhs = lhs.AsFloat()
+		}
+
+		var newRhs float64
+		if rhs.numType == IntegerType {
+			newRhs = float64(rhs.AsInt())
+		} else {
+			newRhs = rhs.AsFloat()
+		}
 
 		ret := newLhs * newRhs
 		return Number{ret, FloatType}
@@ -92,8 +125,19 @@ func (lhs Number) Div(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		newLhs := lhs.val.(float64)
-		newRhs := rhs.val.(float64)
+		var newLhs float64
+		if lhs.numType == IntegerType {
+			newLhs = float64(lhs.AsInt())
+		} else {
+			newLhs = lhs.AsFloat()
+		}
+
+		var newRhs float64
+		if rhs.numType == IntegerType {
+			newRhs = float64(rhs.AsInt())
+		} else {
+			newRhs = rhs.AsFloat()
+		}
 
 		ret := newLhs / newRhs
 		return Number{ret, FloatType}

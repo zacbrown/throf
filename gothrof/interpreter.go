@@ -109,7 +109,10 @@ func (i *Interpreter) Init(tokens *list.List) {
 		elem := inter.dpop()
 		inter.dpush(elem.(Number).Add(NewInt(1)))
 	})
-
+	i.addWordToDictionary("decr", func(inter *Interpreter) {
+		elem := inter.dpop()
+		inter.dpush(elem.(Number).Sub(NewInt(1)))
+	})
 }
 
 func (i *Interpreter) DumpStack() {

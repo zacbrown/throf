@@ -38,6 +38,7 @@ func TestSwap(t *testing.T) {
 	interpreter.Execute()
 
 	dstack := interpreter.GetDStack()
+
 	elem := dstack.Pop().(Number).AsInt()
 	if elem != 2 {
 		t.Errorf("Expected element '2', got '%v'", elem)
@@ -55,6 +56,7 @@ func TestDup(t *testing.T) {
 
 	// step one to make sure 2 is pushed
 	interpreter.Step()
+
 	dstack := interpreter.GetDStack()
 
 	top := dstack.Peek().(Number).AsInt()
@@ -201,7 +203,49 @@ func TestIncr(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	if dstack.Peek().(Number).AsInt() != 2 {
-		t.Fatalf("Expected '2' on the stack, got '%d'", dstack.Peek())
+	elem := dstack.Pop().(Number).AsInt()
+	if elem != 2 {
+		t.Fatalf("Expected '2' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("1.5 incr")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	floatElem := dstack.Pop().(Number).AsFloat()
+	if floatElem != 2.5 {
+		t.Fatalf("Expected '2.5' on the stack, got '%f'", floatElem)
+	}
+}
+
+func TestDecr(t *testing.T) {
+	toks := tokenize("1 decr")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AsInt()
+	if elem != 0 {
+		t.Fatalf("Expected '0' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("1.5 decr")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	floatElem := dstack.Pop().(Number).AsFloat()
+	if floatElem != 0.5 {
+		t.Fatalf("Expected '0.5' on the stack, got '%f'", floatElem)
 	}
 }

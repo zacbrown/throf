@@ -249,3 +249,33 @@ func TestDecr(t *testing.T) {
 		t.Errorf("Expected '0.5' on the stack, got '%f'", floatElem)
 	}
 }
+
+func TestAdd(t *testing.T) {
+	toks := tokenize("1 2 +")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AsInt()
+
+	if elem != 3 {
+		t.Errorf("Expected '3' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("1 2.5 +")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	floatElem := dstack.Pop().(Number).AsFloat()
+	if floatElem != 3.5 {
+		t.Errorf("Expected '3.5' on the stack, got '%f'", floatElem)
+	}
+}
+

@@ -307,3 +307,32 @@ func TestSub(t *testing.T) {
 		t.Errorf("Expected '-1.5' on the stack, got '%f'", floatElem)
 	}
 }
+
+func TestMul(t *testing.T) {
+	toks := tokenize("2 2 *")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AsInt()
+
+	if elem != 4 {
+		t.Errorf("Expected '4' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("2 2.5 *")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	floatElem := dstack.Pop().(Number).AsFloat()
+	if floatElem != 5 {
+		t.Errorf("Expected '5' on the stack, got '%f'", floatElem)
+	}
+}

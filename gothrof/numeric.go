@@ -33,31 +33,31 @@ func NewFloat(val float64) Number {
 	return Number{val, FloatType}
 }
 
-func (n Number) AsInt() int {
+func (n Number) AssertAsInt() int {
 	return n.val.(int)
 }
 
-func (n Number) AsFloat() float64 {
+func (n Number) AssertAsFloat() float64 {
 	return n.val.(float64)
+}
+
+func (n Number) CoerceToFloat() float64 {
+	var num float64
+	if n.numType == IntegerType {
+		num = float64(n.val.(int))
+	} else {
+		num = n.val.(float64)
+	}
+
+	return num
 }
 
 func (lhs Number) Add(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		var newLhs float64
-		if lhs.numType == IntegerType {
-			newLhs = float64(lhs.AsInt())
-		} else {
-			newLhs = lhs.AsFloat()
-		}
-
-		var newRhs float64
-		if rhs.numType == IntegerType {
-			newRhs = float64(rhs.AsInt())
-		} else {
-			newRhs = rhs.AsFloat()
-		}
+		newLhs := lhs.CoerceToFloat()
+		newRhs := rhs.CoerceToFloat()
 
 		ret := newLhs + newRhs
 		return Number{ret, FloatType}
@@ -72,19 +72,8 @@ func (lhs Number) Sub(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		var newLhs float64
-		if lhs.numType == IntegerType {
-			newLhs = float64(lhs.AsInt())
-		} else {
-			newLhs = lhs.AsFloat()
-		}
-
-		var newRhs float64
-		if rhs.numType == IntegerType {
-			newRhs = float64(rhs.AsInt())
-		} else {
-			newRhs = rhs.AsFloat()
-		}
+		newLhs := lhs.CoerceToFloat()
+		newRhs := rhs.CoerceToFloat()
 
 		ret := newLhs - newRhs
 		return Number{ret, FloatType}
@@ -99,19 +88,8 @@ func (lhs Number) Mul(rhs Number) Number {
 	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
 
 	if coerceToFloat {
-		var newLhs float64
-		if lhs.numType == IntegerType {
-			newLhs = float64(lhs.AsInt())
-		} else {
-			newLhs = lhs.AsFloat()
-		}
-
-		var newRhs float64
-		if rhs.numType == IntegerType {
-			newRhs = float64(rhs.AsInt())
-		} else {
-			newRhs = rhs.AsFloat()
-		}
+		newLhs := lhs.CoerceToFloat()
+		newRhs := rhs.CoerceToFloat()
 
 		ret := newLhs * newRhs
 		return Number{ret, FloatType}
@@ -128,19 +106,8 @@ func (lhs Number) Div(rhs Number) Number {
 	// or it might result in an int. We go straight into
 	// coercing to float then determine if we can reduce to
 	// int.
-	var newLhs float64
-	if lhs.numType == IntegerType {
-		newLhs = float64(lhs.AsInt())
-	} else {
-		newLhs = lhs.AsFloat()
-	}
-
-	var newRhs float64
-	if rhs.numType == IntegerType {
-		newRhs = float64(rhs.AsInt())
-	} else {
-		newRhs = rhs.AsFloat()
-	}
+	newLhs := lhs.CoerceToFloat()
+	newRhs := rhs.CoerceToFloat()
 
 	retVal := newLhs / newRhs
 	integer, fraction := math.Modf(retVal)
@@ -153,22 +120,22 @@ func (lhs Number) Div(rhs Number) Number {
 }
 
 func (lhs Number) Mod(rhs Number) Number {
-	var newLhs float64
-	if lhs.numType == IntegerType {
-		newLhs = float64(lhs.AsInt())
-	} else {
-		newLhs = lhs.AsFloat()
-	}
-
-	var newRhs float64
-	if rhs.numType == IntegerType {
-		newRhs = float64(rhs.AsInt())
-	} else {
-		newRhs = rhs.AsFloat()
-	}
+	newLhs := lhs.CoerceToFloat()
+	newRhs := rhs.CoerceToFloat()
 
 	retVal := math.Mod(newLhs, newRhs)
 
 	return Number{retVal, FloatType}
+}
+
+func (lhs Number) Equals(rhs Number) Number {
+	newLhs := lhs.CoerceToFloat()
+	newRhs := rhs.CoerceToFloat()
+
+	if newLhs == newRhs {
+		return Number{1, IntegerType}
+	} else {
+		return Number{0, IntegerType}
+	}
 }
 }

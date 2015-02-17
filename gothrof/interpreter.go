@@ -138,6 +138,11 @@ func (i *Interpreter) Init(tokens *list.List) {
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Mod(rhs.(Number)))
 	})
+	i.addWordToDictionary("=", func(inter *Interpreter) {
+		rhs := inter.dpop()
+		lhs := inter.dpop()
+		inter.dpush(lhs.(Number).Equals(rhs.(Number)))
+	})
 }
 
 func (i *Interpreter) DumpStack() {

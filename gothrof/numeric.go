@@ -128,14 +128,10 @@ func (lhs Number) Mod(rhs Number) Number {
 	return Number{retVal, FloatType}
 }
 
-func (lhs Number) Equals(rhs Number) Number {
+func (lhs Number) Equals(rhs Number) bool {
 	newLhs := lhs.CoerceToFloat()
 	newRhs := rhs.CoerceToFloat()
 
-	if newLhs == newRhs {
-		return Number{1, IntegerType}
-	} else {
-		return Number{0, IntegerType}
-	}
+	return newLhs == newRhs
 }
 }

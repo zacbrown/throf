@@ -407,3 +407,31 @@ func TestEqual(t *testing.T) {
 		t.Errorf("Expected '0' on the stack, got '%d'", elem)
 	}
 }
+
+func TestNotEqual(t *testing.T) {
+	toks := tokenize("3 3 <>")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AssertAsInt()
+	if elem != 0 {
+		t.Errorf("Expected '0' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("3 2 <>")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(Number).AssertAsInt()
+	if elem != 1 {
+		t.Errorf("Expected '1' on the stack, got '%d'", elem)
+	}
+}

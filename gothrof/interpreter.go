@@ -141,7 +141,20 @@ func (i *Interpreter) Init(tokens *list.List) {
 	i.addWordToDictionary("=", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
-		inter.dpush(lhs.(Number).Equals(rhs.(Number)))
+		if lhs.(Number).Equals(rhs.(Number)) {
+			inter.dpush(NewInt(1))
+		} else {
+			inter.dpush(NewInt(0))
+		}
+	})
+	i.addWordToDictionary("<>", func(inter *Interpreter) {
+		rhs := inter.dpop()
+		lhs := inter.dpop()
+		if lhs.(Number).Equals(rhs.(Number)) {
+			inter.dpush(NewInt(0))
+		} else {
+			inter.dpush(NewInt(1))
+		}
 	})
 }
 

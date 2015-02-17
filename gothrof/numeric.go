@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"regexp"
 )
 
@@ -122,28 +123,33 @@ func (lhs Number) Mul(rhs Number) Number {
 }
 
 func (lhs Number) Div(rhs Number) Number {
-	coerceToFloat := lhs.numType == FloatType || rhs.numType == FloatType
-
-	if coerceToFloat {
-		var newLhs float64
-		if lhs.numType == IntegerType {
-			newLhs = float64(lhs.AsInt())
-		} else {
-			newLhs = lhs.AsFloat()
-		}
-
-		var newRhs float64
-		if rhs.numType == IntegerType {
-			newRhs = float64(rhs.AsInt())
-		} else {
-			newRhs = rhs.AsFloat()
-		}
-
-		ret := newLhs / newRhs
-		return Number{ret, FloatType}
+	// Division is a special snowflake. Dividing
+	// an integer by an integer might result in a float
+	// or it might result in an int. We go straight into
+	// coercing to float then determine if we can reduce to
+	// int.
+	var newLhs float64
+	if lhs.numType == IntegerType {
+		newLhs = float64(lhs.AsInt())
+	} else {
+		newLhs = lhs.AsFloat()
 	}
 
-	newLhs := lhs.val.(int)
-	newRhs := rhs.val.(int)
-	return Number{(newLhs / newRhs), IntegerType}
+	var newRhs float64
+	if rhs.numType == IntegerType {
+		newRhs = float64(rhs.AsInt())
+	} else {
+		newRhs = rhs.AsFloat()
+	}
+
+	retVal := newLhs / newRhs
+	integer, fraction := math.Modf(retVal)
+
+	if fraction == 0.0 {
+		return Number{int(integer), IntegerType}
+	}
+
+	return Number{retVal, FloatType}
+
+}
 }

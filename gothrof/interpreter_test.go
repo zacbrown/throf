@@ -336,3 +336,32 @@ func TestMul(t *testing.T) {
 		t.Errorf("Expected '5' on the stack, got '%f'", floatElem)
 	}
 }
+
+func TestDiv(t *testing.T) {
+	toks := tokenize("4 2 /")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AsInt()
+
+	if elem != 2 {
+		t.Errorf("Expected '2' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("2 5 /")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	floatElem := dstack.Pop().(Number).AsFloat()
+	if floatElem != 0.4 {
+		t.Errorf("Expected '0.4' on the stack, got '%f'", floatElem)
+	}
+}

@@ -347,7 +347,6 @@ func TestDiv(t *testing.T) {
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AsInt()
-
 	if elem != 2 {
 		t.Errorf("Expected '2' on the stack, got '%d'", elem)
 	}
@@ -363,5 +362,20 @@ func TestDiv(t *testing.T) {
 	floatElem := dstack.Pop().(Number).AsFloat()
 	if floatElem != 0.4 {
 		t.Errorf("Expected '0.4' on the stack, got '%f'", floatElem)
+	}
+}
+
+func TestMod(t *testing.T) {
+	toks := tokenize("3 2 mod")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AsFloat()
+	if elem != 1 {
+		t.Errorf("Expected '1' on the stack, got '%d'", elem)
 	}
 }

@@ -150,6 +150,25 @@ func (lhs Number) Div(rhs Number) Number {
 	}
 
 	return Number{retVal, FloatType}
+}
 
+func (lhs Number) Mod(rhs Number) Number {
+	var newLhs float64
+	if lhs.numType == IntegerType {
+		newLhs = float64(lhs.AsInt())
+	} else {
+		newLhs = lhs.AsFloat()
+	}
+
+	var newRhs float64
+	if rhs.numType == IntegerType {
+		newRhs = float64(rhs.AsInt())
+	} else {
+		newRhs = rhs.AsFloat()
+	}
+
+	retVal := math.Mod(newLhs, newRhs)
+
+	return Number{retVal, FloatType}
 }
 }

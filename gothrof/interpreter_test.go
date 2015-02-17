@@ -435,3 +435,57 @@ func TestNotEqual(t *testing.T) {
 		t.Errorf("Expected '1' on the stack, got '%d'", elem)
 	}
 }
+
+func TestLT_GT_LTE_GTE(t *testing.T) {
+	toks := tokenize("2 3 <")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AssertAsInt()
+	if elem != 1 {
+		t.Errorf("LT: Expected '1' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("3 3 <=")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(Number).AssertAsInt()
+	if elem != 1 {
+		t.Errorf("LTE: Expected '1' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("3 2 >")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(Number).AssertAsInt()
+	if elem != 1 {
+		t.Errorf("GT: Exepcted '1' on the stack, got '%d'", elem)
+	}
+
+	toks = tokenize("3 3 >=")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(Number).AssertAsInt()
+	if elem != 1 {
+		t.Errorf("GTE: Expected '1' on the stack, got '%d'", elem)
+	}
+}

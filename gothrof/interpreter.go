@@ -156,6 +156,42 @@ func (i *Interpreter) Init(tokens *list.List) {
 			inter.dpush(NewInt(1))
 		}
 	})
+	i.addWordToDictionary("<", func(inter *Interpreter) {
+		rhs := inter.dpop()
+		lhs := inter.dpop()
+		if lhs.(Number).LessThan(rhs.(Number)) {
+			inter.dpush(NewInt(1))
+		} else {
+			inter.dpush(NewInt(0))
+		}
+	})
+	i.addWordToDictionary("<=", func(inter *Interpreter) {
+		rhs := inter.dpop().(Number)
+		lhs := inter.dpop().(Number)
+		if lhs.LessThan(rhs) || lhs.Equals(rhs) {
+			inter.dpush(NewInt(1))
+		} else {
+			inter.dpush(NewInt(0))
+		}
+	})
+	i.addWordToDictionary(">", func(inter *Interpreter) {
+		rhs := inter.dpop().(Number)
+		lhs := inter.dpop().(Number)
+		if !lhs.LessThan(rhs) && !lhs.Equals(rhs) {
+			inter.dpush(NewInt(1))
+		} else {
+			inter.dpush(NewInt(0))
+		}
+	})
+	i.addWordToDictionary(">=", func(inter *Interpreter) {
+		rhs := inter.dpop().(Number)
+		lhs := inter.dpop().(Number)
+		if !lhs.LessThan(rhs) {
+			inter.dpush(NewInt(1))
+		} else {
+			inter.dpush(NewInt(0))
+		}
+	})
 }
 
 func (i *Interpreter) DumpStack() {

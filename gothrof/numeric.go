@@ -134,4 +134,12 @@ func (lhs Number) Equals(rhs Number) bool {
 
 	return newLhs == newRhs
 }
+
+func (lhs Number) LessThan(rhs Number) bool {
+	newLhs := lhs.CoerceToFloat()
+	newRhs := rhs.CoerceToFloat()
+
+	return newLhs < newRhs
+}
+
 }

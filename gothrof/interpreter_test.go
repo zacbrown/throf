@@ -489,3 +489,41 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 		t.Errorf("GTE: Expected 'true' on the stack, got '%t'", elem)
 	}
 }
+
+func TestAnd(t *testing.T) {
+	toks := tokenize("2 2 = 3 2 < and")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack := interpreter.GetDStack()
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(bool)
+	if elem {
+		t.Errorf("'and': Expected 'false' on the stack, got '%t'", elem)
+	}
+
+	toks = tokenize("2 2 = 3 3 = and")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("'and': Expected 'true' on the stack, got '%t'", elem)
+	}
+
+	toks = tokenize("true false and")
+	interpreter.Init(toks)
+	interpreter.Execute()
+
+	dstack = interpreter.GetDStack()
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(bool)
+	if elem {
+		t.Errorf("'and': Expected 'false' on the stack, got '%t'", elem)
+	}
+}

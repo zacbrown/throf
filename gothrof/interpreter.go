@@ -67,6 +67,8 @@ func (i *Interpreter) Init(tokens *list.List) {
 	i.dstack = &Stack{}
 	i.rstack = &Stack{}
 
+	i.addWordToDictionary("true", func(inter *Interpreter) { inter.dpush(true) })
+	i.addWordToDictionary("false", func(inter *Interpreter) { inter.dpush(false) })
 	i.addWordToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
 	i.addWordToDictionary("swap", func(inter *Interpreter) {
 		top := inter.dpop()
@@ -167,6 +169,11 @@ func (i *Interpreter) Init(tokens *list.List) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(!lhs.LessThan(rhs))
+	})
+	i.addWordToDictionary("and", func(inter *Interpreter) {
+		rhs := inter.dpop().(bool)
+		lhs := inter.dpop().(bool)
+		inter.dpush(lhs && rhs)
 	})
 }
 

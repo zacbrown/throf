@@ -389,9 +389,9 @@ func TestEqual(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem := dstack.Pop().(Number).AssertAsInt()
-	if elem != 1 {
-		t.Errorf("Expected '1' on the stack, got '%d'", elem)
+	elem := dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("Expected 'true' on the stack, got '%t'", elem)
 	}
 
 	toks = tokenize("3 2 =")
@@ -402,9 +402,9 @@ func TestEqual(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem = dstack.Pop().(Number).AssertAsInt()
-	if elem != 0 {
-		t.Errorf("Expected '0' on the stack, got '%d'", elem)
+	elem = dstack.Pop().(bool)
+	if elem {
+		t.Errorf("Expected 'false' on the stack, got '%t'", elem)
 	}
 }
 
@@ -417,9 +417,9 @@ func TestNotEqual(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem := dstack.Pop().(Number).AssertAsInt()
-	if elem != 0 {
-		t.Errorf("Expected '0' on the stack, got '%d'", elem)
+	elem := dstack.Pop().(bool)
+	if elem {
+		t.Errorf("Expected 'false' on the stack, got '%t'", elem)
 	}
 
 	toks = tokenize("3 2 <>")
@@ -430,9 +430,9 @@ func TestNotEqual(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem = dstack.Pop().(Number).AssertAsInt()
-	if elem != 1 {
-		t.Errorf("Expected '1' on the stack, got '%d'", elem)
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("Expected 'true' on the stack, got '%t'", elem)
 	}
 }
 
@@ -445,9 +445,9 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem := dstack.Pop().(Number).AssertAsInt()
-	if elem != 1 {
-		t.Errorf("LT: Expected '1' on the stack, got '%d'", elem)
+	elem := dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("LT: Expected 'true' on the stack, got '%t'", elem)
 	}
 
 	toks = tokenize("3 3 <=")
@@ -458,9 +458,9 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem = dstack.Pop().(Number).AssertAsInt()
-	if elem != 1 {
-		t.Errorf("LTE: Expected '1' on the stack, got '%d'", elem)
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("LTE: Expected 'true' on the stack, got '%t'", elem)
 	}
 
 	toks = tokenize("3 2 >")
@@ -471,9 +471,9 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem = dstack.Pop().(Number).AssertAsInt()
-	if elem != 1 {
-		t.Errorf("GT: Exepcted '1' on the stack, got '%d'", elem)
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("GT: Exepcted 'true' on the stack, got '%t'", elem)
 	}
 
 	toks = tokenize("3 3 >=")
@@ -484,8 +484,8 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 
 	validateDepth(t, dstack.Length(), 1)
 
-	elem = dstack.Pop().(Number).AssertAsInt()
-	if elem != 1 {
-		t.Errorf("GTE: Expected '1' on the stack, got '%d'", elem)
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("GTE: Expected 'true' on the stack, got '%t'", elem)
 	}
 }

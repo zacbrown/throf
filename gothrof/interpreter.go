@@ -141,56 +141,32 @@ func (i *Interpreter) Init(tokens *list.List) {
 	i.addWordToDictionary("=", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
-		if lhs.(Number).Equals(rhs.(Number)) {
-			inter.dpush(NewInt(1))
-		} else {
-			inter.dpush(NewInt(0))
-		}
+		inter.dpush(lhs.(Number).Equals(rhs.(Number)))
 	})
 	i.addWordToDictionary("<>", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
-		if lhs.(Number).Equals(rhs.(Number)) {
-			inter.dpush(NewInt(0))
-		} else {
-			inter.dpush(NewInt(1))
-		}
+		inter.dpush(!lhs.(Number).Equals(rhs.(Number)))
 	})
 	i.addWordToDictionary("<", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
-		if lhs.(Number).LessThan(rhs.(Number)) {
-			inter.dpush(NewInt(1))
-		} else {
-			inter.dpush(NewInt(0))
-		}
+		inter.dpush(lhs.(Number).LessThan(rhs.(Number)))
 	})
 	i.addWordToDictionary("<=", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
-		if lhs.LessThan(rhs) || lhs.Equals(rhs) {
-			inter.dpush(NewInt(1))
-		} else {
-			inter.dpush(NewInt(0))
-		}
+		inter.dpush(lhs.LessThan(rhs) || lhs.Equals(rhs))
 	})
 	i.addWordToDictionary(">", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
-		if !lhs.LessThan(rhs) && !lhs.Equals(rhs) {
-			inter.dpush(NewInt(1))
-		} else {
-			inter.dpush(NewInt(0))
-		}
+		inter.dpush(!lhs.LessThan(rhs) && !lhs.Equals(rhs))
 	})
 	i.addWordToDictionary(">=", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
-		if !lhs.LessThan(rhs) {
-			inter.dpush(NewInt(1))
-		} else {
-			inter.dpush(NewInt(0))
-		}
+		inter.dpush(!lhs.LessThan(rhs))
 	})
 }
 

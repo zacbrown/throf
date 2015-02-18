@@ -402,3 +402,29 @@ func TestOr(t *testing.T) {
 		t.Errorf("'or': Expected 'true' on the stack, got '%t'", elem)
 	}
 }
+
+func TestXOR(t *testing.T) {
+	dstack := setupInterpreter("true false xor")
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("'xor': Expected 'true' on the stack, got '%t'", elem)
+	}
+
+	dstack = setupInterpreter("false false xor")
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(bool)
+	if elem {
+		t.Errorf("'xor': Expected 'false' on the stack, got '%t'", elem)
+	}
+
+	dstack = setupInterpreter("false true xor")
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("'xor': Expected 'true' on the stack, got '%t'", elem)
+	}
+}

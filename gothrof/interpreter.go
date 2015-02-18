@@ -180,6 +180,11 @@ func (i *Interpreter) Init(tokens *list.List) {
 		lhs := inter.dpop().(bool)
 		inter.dpush(lhs || rhs)
 	})
+	i.addWordToDictionary("xor", func(inter *Interpreter) {
+		rhs := inter.dpop().(bool)
+		lhs := inter.dpop().(bool)
+		inter.dpush((!rhs && lhs) || (rhs && !lhs))
+	})
 }
 
 func (i *Interpreter) DumpStack() {

@@ -48,9 +48,11 @@ const (
 	OP_IMMEDIATE = iota
 )
 
+type CodeWord func(*Interpreter)
+
 type Word struct {
 	name       string
-	definition func(interpreter *Interpreter)
+	definition *list.List
 }
 
 type Interpreter struct {
@@ -63,124 +65,126 @@ type Interpreter struct {
 }
 
 func (i *Interpreter) Init(tokens *list.List) {
+	i.immediate = true
 	i.stream = tokens
 	i.dstack = &Stack{}
 	i.rstack = &Stack{}
 
-	i.addWordToDictionary("true", func(inter *Interpreter) { inter.dpush(true) })
-	i.addWordToDictionary("false", func(inter *Interpreter) { inter.dpush(false) })
-	i.addWordToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
-	i.addWordToDictionary("swap", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("immediate", func(inter *Interpreter) { inter.immediate = true })
+	i.addPrimitiveWordToDictionary("true", func(inter *Interpreter) { inter.dpush(true) })
+	i.addPrimitiveWordToDictionary("false", func(inter *Interpreter) { inter.dpush(false) })
+	i.addPrimitiveWordToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
+	i.addPrimitiveWordToDictionary("swap", func(inter *Interpreter) {
 		top := inter.dpop()
 		next := inter.dpop()
 		inter.dpush(top)
 		inter.dpush(next)
 	})
-	i.addWordToDictionary("dup", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("dup", func(inter *Interpreter) {
 		inter.dpush(inter.dpeek())
 	})
-	i.addWordToDictionary("over", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("over", func(inter *Interpreter) {
 		elem := inter.dstack.GetAt(1)
 		inter.dpush(elem)
 	})
-	i.addWordToDictionary("rot", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("rot", func(inter *Interpreter) {
 		elem := inter.dstack.RemoveAt(2)
 		inter.dpush(elem)
 	})
-	i.addWordToDictionary("-rot", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("-rot", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dstack.InsertAfter(1, elem)
 	})
-	i.addWordToDictionary("2drop", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("2drop", func(inter *Interpreter) {
 		inter.dpop()
 		inter.dpop()
 	})
-	i.addWordToDictionary("2dup", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("2dup", func(inter *Interpreter) {
 		elem1 := inter.dstack.GetAt(1)
 		elem2 := inter.dpeek()
 		inter.dpush(elem1)
 		inter.dpush(elem2)
 	})
-	i.addWordToDictionary("?dup", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("?dup", func(inter *Interpreter) {
 		elem := inter.dpeek()
 		if elem.(Number).val != 0 {
 			inter.dpush(elem)
 		}
 	})
-	i.addWordToDictionary("+", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("+", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Add(rhs.(Number)))
 	})
-	i.addWordToDictionary("-", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("-", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Sub(rhs.(Number)))
 	})
-	i.addWordToDictionary("*", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("*", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Mul(rhs.(Number)))
 	})
-	i.addWordToDictionary("/", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("/", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Div(rhs.(Number)))
 	})
-	i.addWordToDictionary("incr", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("incr", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dpush(elem.(Number).Add(NewInt(1)))
 	})
-	i.addWordToDictionary("decr", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("decr", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dpush(elem.(Number).Sub(NewInt(1)))
 	})
-	i.addWordToDictionary("mod", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("mod", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Mod(rhs.(Number)))
 	})
-	i.addWordToDictionary("=", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("=", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Equals(rhs.(Number)))
 	})
-	i.addWordToDictionary("<>", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("<>", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(!lhs.(Number).Equals(rhs.(Number)))
 	})
-	i.addWordToDictionary("<", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("<", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).LessThan(rhs.(Number)))
 	})
-	i.addWordToDictionary("<=", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("<=", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(lhs.LessThan(rhs) || lhs.Equals(rhs))
 	})
-	i.addWordToDictionary(">", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary(">", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(!lhs.LessThan(rhs) && !lhs.Equals(rhs))
 	})
-	i.addWordToDictionary(">=", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary(">=", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(!lhs.LessThan(rhs))
 	})
-	i.addWordToDictionary("and", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("and", func(inter *Interpreter) {
 		rhs := inter.dpop().(bool)
 		lhs := inter.dpop().(bool)
 		inter.dpush(lhs && rhs)
 	})
-	i.addWordToDictionary("or", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("or", func(inter *Interpreter) {
 		rhs := inter.dpop().(bool)
 		lhs := inter.dpop().(bool)
 		inter.dpush(lhs || rhs)
 	})
-	i.addWordToDictionary("xor", func(inter *Interpreter) {
+	i.addPrimitiveWordToDictionary("xor", func(inter *Interpreter) {
 		rhs := inter.dpop().(bool)
 		lhs := inter.dpop().(bool)
 		inter.dpush((!rhs && lhs) || (rhs && !lhs))
@@ -244,7 +248,9 @@ func (i *Interpreter) Step() bool {
 			i.dpush(dataAsString)
 		}
 	} else {
-		word.definition(i)
+		for codeword := word.definition.Front(); codeword != nil; codeword = codeword.Next() {
+			codeword.Value.(CodeWord)(i)
+		}
 	}
 
 	i.stream.Remove(current)
@@ -256,8 +262,19 @@ func (i *Interpreter) Execute() {
 	}
 }
 
+func (i *Interpreter) addPrimitiveWordToDictionary(name string,
+	definition CodeWord) {
+
+	word := &Word{}
+	word.name = name
+	word.definition = &list.List{}
+	word.definition.PushBack(definition)
+
+	i.latest.PushFront(word)
+}
+
 func (i *Interpreter) addWordToDictionary(name string,
-	definition func(interpreter *Interpreter)) {
+	definition *list.List) {
 
 	i.latest.PushFront(&Word{name, definition})
 }

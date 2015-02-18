@@ -19,12 +19,16 @@ func validateDepth(t *testing.T, actualDepth int, expectedDepth int) {
 	}
 }
 
-func TestDrop(t *testing.T) {
-	toks := tokenize("2 2 drop")
+func setupInterpreter(input string) *Stack {
+	toks := tokenize(input)
 	interpreter.Init(toks)
 	interpreter.Execute()
 
-	dstack := interpreter.GetDStack()
+	return interpreter.GetDStack()
+}
+
+func TestDrop(t *testing.T) {
+	dstack := setupInterpreter("2 2 drop")
 	validateDepth(t, dstack.Length(), 1)
 
 	if dstack.Peek().(Number).AssertAsInt() != 2 {
@@ -33,11 +37,8 @@ func TestDrop(t *testing.T) {
 }
 
 func TestSwap(t *testing.T) {
-	toks := tokenize("2 3 swap")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
+	dstack := setupInterpreter("2 3 swap")
+	validateDepth(t, dstack.Length(), 2)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
 	if elem != 2 {
@@ -81,12 +82,7 @@ func TestDup(t *testing.T) {
 }
 
 func TestOver(t *testing.T) {
-	toks := tokenize("1 2 over")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 over")
 	validateDepth(t, dstack.Length(), 3)
 
 	first := dstack.Pop().(Number).AssertAsInt()
@@ -99,12 +95,7 @@ func TestOver(t *testing.T) {
 }
 
 func TestRot(t *testing.T) {
-	toks := tokenize("1 2 3 rot")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 3 rot")
 	validateDepth(t, dstack.Length(), 3)
 
 	first := dstack.Pop().(Number).AssertAsInt()
@@ -117,12 +108,7 @@ func TestRot(t *testing.T) {
 }
 
 func TestNRot(t *testing.T) {
-	toks := tokenize("1 2 3 -rot")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 3 -rot")
 	validateDepth(t, dstack.Length(), 3)
 
 	first := dstack.Pop().(Number).AssertAsInt()
@@ -135,22 +121,12 @@ func TestNRot(t *testing.T) {
 }
 
 func Test2Drop(t *testing.T) {
-	toks := tokenize("1 2 2drop")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 2drop")
 	validateDepth(t, dstack.Length(), 0)
 }
 
 func Test2Dup(t *testing.T) {
-	toks := tokenize("1 2 2dup")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 2dup")
 	validateDepth(t, dstack.Length(), 4)
 
 	first := dstack.Pop().(Number).AssertAsInt()
@@ -164,12 +140,7 @@ func Test2Dup(t *testing.T) {
 }
 
 func TestQDup(t *testing.T) {
-	toks := tokenize("1 ?dup")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 ?dup")
 	validateDepth(t, dstack.Length(), 2)
 
 	first := dstack.Pop().(Number).AssertAsInt()
@@ -179,12 +150,7 @@ func TestQDup(t *testing.T) {
 		t.Fatalf("Expected 1, 1 on the stack, got %s, %s", first, second)
 	}
 
-	toks = tokenize("0 ?dup")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("0 ?dup")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
@@ -195,12 +161,7 @@ func TestQDup(t *testing.T) {
 }
 
 func TestIncr(t *testing.T) {
-	toks := tokenize("1 incr")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 incr")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
@@ -208,12 +169,7 @@ func TestIncr(t *testing.T) {
 		t.Errorf("Expected '2' on the stack, got '%d'", elem)
 	}
 
-	toks = tokenize("1.5 incr")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("1.5 incr")
 	validateDepth(t, dstack.Length(), 1)
 
 	floatElem := dstack.Pop().(Number).AssertAsFloat()
@@ -223,12 +179,7 @@ func TestIncr(t *testing.T) {
 }
 
 func TestDecr(t *testing.T) {
-	toks := tokenize("1 decr")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 decr")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
@@ -236,12 +187,7 @@ func TestDecr(t *testing.T) {
 		t.Errorf("Expected '0' on the stack, got '%d'", elem)
 	}
 
-	toks = tokenize("1.5 decr")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("1.5 decr")
 	validateDepth(t, dstack.Length(), 1)
 
 	floatElem := dstack.Pop().(Number).AssertAsFloat()
@@ -251,26 +197,15 @@ func TestDecr(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
-	toks := tokenize("1 2 +")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 +")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
-
 	if elem != 3 {
 		t.Errorf("Expected '3' on the stack, got '%d'", elem)
 	}
 
-	toks = tokenize("1 2.5 +")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("1 2.5 +")
 	validateDepth(t, dstack.Length(), 1)
 
 	floatElem := dstack.Pop().(Number).AssertAsFloat()
@@ -280,12 +215,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestSub(t *testing.T) {
-	toks := tokenize("1 2 -")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("1 2 -")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
@@ -294,12 +224,7 @@ func TestSub(t *testing.T) {
 		t.Errorf("Expected '-1' on the stack, got '%d'", elem)
 	}
 
-	toks = tokenize("1 2.5 -")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("1 2.5 -")
 	validateDepth(t, dstack.Length(), 1)
 
 	floatElem := dstack.Pop().(Number).AssertAsFloat()
@@ -309,12 +234,7 @@ func TestSub(t *testing.T) {
 }
 
 func TestMul(t *testing.T) {
-	toks := tokenize("2 2 *")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("2 2 *")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
@@ -323,12 +243,7 @@ func TestMul(t *testing.T) {
 		t.Errorf("Expected '4' on the stack, got '%d'", elem)
 	}
 
-	toks = tokenize("2 2.5 *")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("2 2.5 *")
 	validateDepth(t, dstack.Length(), 1)
 
 	floatElem := dstack.Pop().(Number).AssertAsFloat()
@@ -338,12 +253,7 @@ func TestMul(t *testing.T) {
 }
 
 func TestDiv(t *testing.T) {
-	toks := tokenize("4 2 /")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("4 2 /")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsInt()
@@ -351,12 +261,7 @@ func TestDiv(t *testing.T) {
 		t.Errorf("Expected '2' on the stack, got '%d'", elem)
 	}
 
-	toks = tokenize("2 5 /")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("2 5 /")
 	validateDepth(t, dstack.Length(), 1)
 
 	floatElem := dstack.Pop().(Number).AssertAsFloat()
@@ -366,12 +271,7 @@ func TestDiv(t *testing.T) {
 }
 
 func TestMod(t *testing.T) {
-	toks := tokenize("3 2 mod")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("3 2 mod")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(Number).AssertAsFloat()
@@ -381,12 +281,7 @@ func TestMod(t *testing.T) {
 }
 
 func TestEqual(t *testing.T) {
-	toks := tokenize("3 3 =")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("3 3 =")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(bool)
@@ -394,12 +289,7 @@ func TestEqual(t *testing.T) {
 		t.Errorf("Expected 'true' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("3 2 =")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("3 2 =")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)
@@ -409,12 +299,7 @@ func TestEqual(t *testing.T) {
 }
 
 func TestNotEqual(t *testing.T) {
-	toks := tokenize("3 3 <>")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("3 3 <>")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(bool)
@@ -422,12 +307,7 @@ func TestNotEqual(t *testing.T) {
 		t.Errorf("Expected 'false' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("3 2 <>")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("3 2 <>")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)
@@ -437,12 +317,8 @@ func TestNotEqual(t *testing.T) {
 }
 
 func TestLT_GT_LTE_GTE(t *testing.T) {
-	toks := tokenize("2 3 <")
-	interpreter.Init(toks)
-	interpreter.Execute()
 
-	dstack := interpreter.GetDStack()
-
+	dstack := setupInterpreter("2 3 <")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(bool)
@@ -450,12 +326,7 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 		t.Errorf("LT: Expected 'true' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("3 3 <=")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("3 3 <=")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)
@@ -463,12 +334,7 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 		t.Errorf("LTE: Expected 'true' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("3 2 >")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("3 2 >")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)
@@ -476,12 +342,7 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 		t.Errorf("GT: Exepcted 'true' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("3 3 >=")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
-
+	dstack = setupInterpreter("3 3 >=")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)
@@ -491,11 +352,7 @@ func TestLT_GT_LTE_GTE(t *testing.T) {
 }
 
 func TestAnd(t *testing.T) {
-	toks := tokenize("2 2 = 3 2 < and")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack := interpreter.GetDStack()
+	dstack := setupInterpreter("2 2 = 3 2 < and")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(bool)
@@ -503,11 +360,7 @@ func TestAnd(t *testing.T) {
 		t.Errorf("'and': Expected 'false' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("2 2 = 3 3 = and")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
+	dstack = setupInterpreter("2 2 = 3 3 = and")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)
@@ -515,11 +368,7 @@ func TestAnd(t *testing.T) {
 		t.Errorf("'and': Expected 'true' on the stack, got '%t'", elem)
 	}
 
-	toks = tokenize("true false and")
-	interpreter.Init(toks)
-	interpreter.Execute()
-
-	dstack = interpreter.GetDStack()
+	dstack = setupInterpreter("true false and")
 	validateDepth(t, dstack.Length(), 1)
 
 	elem = dstack.Pop().(bool)

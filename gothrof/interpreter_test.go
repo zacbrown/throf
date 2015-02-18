@@ -376,3 +376,29 @@ func TestAnd(t *testing.T) {
 		t.Errorf("'and': Expected 'false' on the stack, got '%t'", elem)
 	}
 }
+
+func TestOr(t *testing.T) {
+	dstack := setupInterpreter("2 2 = 3 2 < or")
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("'or': Expected 'true' on the stack, got '%t'", elem)
+	}
+
+	dstack = setupInterpreter("2 2 < 3 2 < or")
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(bool)
+	if elem {
+		t.Errorf("'or': Expected 'false' on the stack, got '%t'", elem)
+	}
+
+	dstack = setupInterpreter("true false or")
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(bool)
+	if !elem {
+		t.Errorf("'or': Expected 'true' on the stack, got '%t'", elem)
+	}
+}

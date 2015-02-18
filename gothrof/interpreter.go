@@ -175,6 +175,11 @@ func (i *Interpreter) Init(tokens *list.List) {
 		lhs := inter.dpop().(bool)
 		inter.dpush(lhs && rhs)
 	})
+	i.addWordToDictionary("or", func(inter *Interpreter) {
+		rhs := inter.dpop().(bool)
+		lhs := inter.dpop().(bool)
+		inter.dpush(lhs || rhs)
+	})
 }
 
 func (i *Interpreter) DumpStack() {

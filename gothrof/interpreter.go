@@ -52,142 +52,147 @@ type CodeWord func(*Interpreter)
 
 type Word struct {
 	name       string
+	immediate  bool
 	definition *list.List
 }
 
 type Interpreter struct {
-	dstack    *Stack     // data stack
-	rstack    *Stack     // return stack
-	stream    *list.List // token stream
-	latest    list.List  // dictionary head
-	base      int        // current base for printing/reading numbers
-	immediate bool       // signal for whether IMMEDIATE mode is on
+	dstack *Stack     // data stack
+	rstack *Stack     // return stack
+	stream *list.List // token stream
+	latest list.List  // dictionary head
+	base   int        // current base for printing/reading numbers
+	state  bool       // 'false' == immediate, 'true' == compiling
 }
 
 func (i *Interpreter) Init(tokens *list.List) {
-	i.immediate = true
 	i.stream = tokens
 	i.dstack = &Stack{}
 	i.rstack = &Stack{}
 
-	i.addPrimitiveWordToDictionary("immediate", func(inter *Interpreter) { inter.immediate = true })
-	i.addPrimitiveWordToDictionary("true", func(inter *Interpreter) { inter.dpush(true) })
-	i.addPrimitiveWordToDictionary("false", func(inter *Interpreter) { inter.dpush(false) })
-	i.addPrimitiveWordToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
-	i.addPrimitiveWordToDictionary("swap", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("true", func(inter *Interpreter) { inter.dpush(true) })
+	i.addNormalPrimitiveToDictionary("false", func(inter *Interpreter) { inter.dpush(false) })
+	i.addNormalPrimitiveToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
+	i.addNormalPrimitiveToDictionary("swap", func(inter *Interpreter) {
 		top := inter.dpop()
 		next := inter.dpop()
 		inter.dpush(top)
 		inter.dpush(next)
 	})
-	i.addPrimitiveWordToDictionary("dup", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("dup", func(inter *Interpreter) {
 		inter.dpush(inter.dpeek())
 	})
-	i.addPrimitiveWordToDictionary("over", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("over", func(inter *Interpreter) {
 		elem := inter.dstack.GetAt(1)
 		inter.dpush(elem)
 	})
-	i.addPrimitiveWordToDictionary("rot", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("rot", func(inter *Interpreter) {
 		elem := inter.dstack.RemoveAt(2)
 		inter.dpush(elem)
 	})
-	i.addPrimitiveWordToDictionary("-rot", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("-rot", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dstack.InsertAfter(1, elem)
 	})
-	i.addPrimitiveWordToDictionary("2drop", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("2drop", func(inter *Interpreter) {
 		inter.dpop()
 		inter.dpop()
 	})
-	i.addPrimitiveWordToDictionary("2dup", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("2dup", func(inter *Interpreter) {
 		elem1 := inter.dstack.GetAt(1)
 		elem2 := inter.dpeek()
 		inter.dpush(elem1)
 		inter.dpush(elem2)
 	})
-	i.addPrimitiveWordToDictionary("?dup", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("?dup", func(inter *Interpreter) {
 		elem := inter.dpeek()
 		if elem.(Number).val != 0 {
 			inter.dpush(elem)
 		}
 	})
-	i.addPrimitiveWordToDictionary("+", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("+", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Add(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("-", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("-", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Sub(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("*", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("*", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Mul(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("/", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("/", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Div(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("incr", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("incr", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dpush(elem.(Number).Add(NewInt(1)))
 	})
-	i.addPrimitiveWordToDictionary("decr", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("decr", func(inter *Interpreter) {
 		elem := inter.dpop()
 		inter.dpush(elem.(Number).Sub(NewInt(1)))
 	})
-	i.addPrimitiveWordToDictionary("mod", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("mod", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Mod(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("=", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("=", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).Equals(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("<>", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("<>", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(!lhs.(Number).Equals(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("<", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("<", func(inter *Interpreter) {
 		rhs := inter.dpop()
 		lhs := inter.dpop()
 		inter.dpush(lhs.(Number).LessThan(rhs.(Number)))
 	})
-	i.addPrimitiveWordToDictionary("<=", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("<=", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(lhs.LessThan(rhs) || lhs.Equals(rhs))
 	})
-	i.addPrimitiveWordToDictionary(">", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary(">", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(!lhs.LessThan(rhs) && !lhs.Equals(rhs))
 	})
-	i.addPrimitiveWordToDictionary(">=", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary(">=", func(inter *Interpreter) {
 		rhs := inter.dpop().(Number)
 		lhs := inter.dpop().(Number)
 		inter.dpush(!lhs.LessThan(rhs))
 	})
-	i.addPrimitiveWordToDictionary("and", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("and", func(inter *Interpreter) {
 		rhs := inter.dpop().(bool)
 		lhs := inter.dpop().(bool)
 		inter.dpush(lhs && rhs)
 	})
-	i.addPrimitiveWordToDictionary("or", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("or", func(inter *Interpreter) {
 		rhs := inter.dpop().(bool)
 		lhs := inter.dpop().(bool)
 		inter.dpush(lhs || rhs)
 	})
-	i.addPrimitiveWordToDictionary("xor", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("xor", func(inter *Interpreter) {
 		rhs := inter.dpop().(bool)
 		lhs := inter.dpop().(bool)
 		inter.dpush((!rhs && lhs) || (rhs && !lhs))
+	})
+	i.addImmediatePrimitiveToDictionary("[", func(inter *Interpreter) {
+		inter.state = false
+	})
+	i.addNormalPrimitiveToDictionary("]", func(inter *Interpreter) {
+		inter.state = true
 	})
 }
 
@@ -262,21 +267,30 @@ func (i *Interpreter) Execute() {
 	}
 }
 
-func (i *Interpreter) addPrimitiveWordToDictionary(name string,
+func (i *Interpreter) addPrimitiveWordToDictionary(name string, immediate bool,
 	definition CodeWord) {
 
 	word := &Word{}
 	word.name = name
+	word.immediate = immediate
 	word.definition = &list.List{}
 	word.definition.PushBack(definition)
 
 	i.latest.PushFront(word)
 }
 
-func (i *Interpreter) addWordToDictionary(name string,
+func (i *Interpreter) addImmediatePrimitiveToDictionary(name string, definition CodeWord) {
+	i.addPrimitiveWordToDictionary(name, false, definition)
+}
+
+func (i *Interpreter) addNormalPrimitiveToDictionary(name string, definition CodeWord) {
+	i.addPrimitiveWordToDictionary(name, true, definition)
+}
+
+func (i *Interpreter) addWordToDictionary(name string, immediate bool,
 	definition *list.List) {
 
-	i.latest.PushFront(&Word{name, definition})
+	i.latest.PushFront(&Word{name, immediate, definition})
 }
 
 func (i *Interpreter) findWordInDictionary(name string) *Word {

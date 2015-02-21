@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"regexp"
 )
 
 type Numeric interface {
@@ -140,6 +139,4 @@ func (lhs Number) LessThan(rhs Number) bool {
 	newRhs := rhs.CoerceToFloat()
 
 	return newLhs < newRhs
-}
-
 }

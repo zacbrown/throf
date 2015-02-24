@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"container/list"
 	"fmt"
+	"io/ioutil"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -65,11 +68,28 @@ type Interpreter struct {
 	state  bool       // 'false' == immediate, 'true' == compiling
 }
 
-func (i *Interpreter) Init(tokens *list.List) {
-	i.stream = tokens
-	i.dstack = &Stack{}
-	i.rstack = &Stack{}
+func (i *Interpreter) tokenize(input string) {
+	reader := strings.NewReader(input)
+	var buffer bytes.Buffer
+	tokens := &list.List{}
 
+	for ch, _, err := reader.ReadRune(); err == nil; ch, _, err = reader.ReadRune() {
+		if ch == '\t' || ch == ' ' || ch == '\n' || ch == '\r' || ch == '\f' {
+			if buffer.Len() > 0 {
+				tokens.PushBack(buffer.String())
+				buffer.Reset()
+			}
+		} else {
+			buffer.WriteRune(ch)
+		}
+	}
+
+	tokens.PushBack(buffer.String())
+
+	i.stream.PushFrontList(tokens)
+}
+
+func (i *Interpreter) initPrimitives() {
 	i.addNormalPrimitiveToDictionary("true", func(inter *Interpreter) { inter.dpush(true) })
 	i.addNormalPrimitiveToDictionary("false", func(inter *Interpreter) { inter.dpush(false) })
 	i.addNormalPrimitiveToDictionary("drop", func(inter *Interpreter) { inter.dpop() })
@@ -194,10 +214,43 @@ func (i *Interpreter) Init(tokens *list.List) {
 	i.addNormalPrimitiveToDictionary("]", func(inter *Interpreter) {
 		inter.state = true
 	})
+	i.addNormalPrimitiveToDictionary("word", func(inter *Interpreter) {
+		wordContent := inter.stream.Front()
+		inter.dpush(wordContent)
+		inter.stream.Remove(wordContent)
+	})
+	i.addNormalPrimitiveToDictionary("create", func(inter *Interpreter) {
+		wordName := inter.dpop().(string)
+		inter.latest.PushFront(&Word{wordName, false, &list.List{}})
+	})
+	i.addNormalPrimitiveToDictionary(",", func(inter *Interpreter) {
+		currentWordBeingCompiled := inter.latest.Front().Value.(Word).definition
+		currentWordBeingCompiled.PushBack(inter.dpop())
+	})
+}
+
+func getFileAsString(fileName string) (string, error) {
+	data, err := ioutil.ReadFile(fileName)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+func (i *Interpreter) Init() {
+	i.stream = &list.List{}
+	i.dstack = &Stack{}
+	i.rstack = &Stack{}
+	i.latest = list.List{}
+	i.initPrimitives()
+
+	i.Execute("init.th4")
 }
 
 func (i *Interpreter) DumpStack() {
-	fmt.Println("Stack")
+	fmt.Printf("Stack (depth: %d)\n", i.dstack.Length())
 	fmt.Println("==============")
 	for cur := i.dstack.top; cur != nil; cur = cur.next {
 		fmt.Printf("%v\n", cur)
@@ -262,8 +315,23 @@ func (i *Interpreter) Step() bool {
 	return true
 }
 
-func (i *Interpreter) Execute() {
+func (i *Interpreter) ExecuteAsREPL(input string) {
+	i.tokenize(input)
+
 	for i.Step() == true {
+	}
+}
+
+func (i *Interpreter) Execute(fileName string) {
+	input, err := getFileAsString(fileName)
+
+	if err != nil {
+		msg := fmt.Sprintf("'%s' is not a valid throf (.th4) file. Exiting.\nError context: %s", fileName, err.Error())
+		panic(msg)
+	}
+
+	if input != "" {
+		i.ExecuteAsREPL(input)
 	}
 }
 

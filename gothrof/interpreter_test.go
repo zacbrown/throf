@@ -20,9 +20,8 @@ func validateDepth(t *testing.T, actualDepth int, expectedDepth int) {
 }
 
 func setupInterpreter(input string) *Stack {
-	toks := tokenize(input)
-	interpreter.Init(toks)
-	interpreter.Execute()
+	interpreter.Init()
+	interpreter.ExecuteAsREPL(input)
 
 	return interpreter.GetDStack()
 }
@@ -52,20 +51,17 @@ func TestSwap(t *testing.T) {
 }
 
 func TestDup(t *testing.T) {
-	toks := tokenize("2 dup")
-	interpreter.Init(toks)
+	dstack := setupInterpreter("2")
 
 	// step one to make sure 2 is pushed
 	interpreter.Step()
-
-	dstack := interpreter.GetDStack()
 
 	top := dstack.Peek().(Number).AssertAsInt()
 	if top != 2 {
 		t.Fatalf("Expected '2' to be on top of dstack, got %d", top)
 	}
 
-	interpreter.Execute()
+	interpreter.ExecuteAsREPL("dup")
 
 	validateDepth(t, dstack.Length(), 2)
 
@@ -427,4 +423,8 @@ func TestXOR(t *testing.T) {
 	if !elem {
 		t.Errorf("'xor': Expected 'true' on the stack, got '%t'", elem)
 	}
+}
+
+func TestWordDefinition(t *testing.T) {
+	//dstack := setupInterpreter(": poop 1 2 + ; poop")
 }

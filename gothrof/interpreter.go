@@ -208,15 +208,15 @@ func (i *Interpreter) initPrimitives() {
 		lhs := inter.dpop().(bool)
 		inter.dpush((!rhs && lhs) || (rhs && !lhs))
 	})
-	i.addImmediatePrimitiveToDictionary("[", func(inter *Interpreter) {
+	i.addImmediatePrimitiveToDictionary("]", func(inter *Interpreter) {
 		inter.state = false
 	})
-	i.addNormalPrimitiveToDictionary("]", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("[", func(inter *Interpreter) {
 		inter.state = true
 	})
 	i.addNormalPrimitiveToDictionary("word", func(inter *Interpreter) {
 		wordContent := inter.stream.Front()
-		inter.dpush(wordContent)
+		inter.dpush(wordContent.Value.(string))
 		inter.stream.Remove(wordContent)
 	})
 	i.addNormalPrimitiveToDictionary("create", func(inter *Interpreter) {
@@ -227,6 +227,24 @@ func (i *Interpreter) initPrimitives() {
 		currentWordBeingCompiled := inter.latest.Front().Value.(Word).definition
 		currentWordBeingCompiled.PushBack(inter.dpop())
 	})
+
+	cwWord := i.findWordInDictionary("word").definition
+	cwCreate := i.findWordInDictionary("create").definition
+	//	cwComma := i.findWordInDictionary(",")
+	cwRBrac := i.findWordInDictionary("[").definition
+	cwLBrac := i.findWordInDictionary("]").definition
+
+	// ':'
+	colonDef := &list.List{}
+	colonDef.PushBackList(cwWord)
+	colonDef.PushBackList(cwCreate)
+	colonDef.PushBackList(cwRBrac)
+	i.addWordToDictionary(":", false, colonDef)
+
+	// ';'
+	semicolonDef := &list.List{}
+	colonDef.PushBackList(cwLBrac)
+	i.addWordToDictionary(";", true, semicolonDef)
 }
 
 func getFileAsString(fileName string) (string, error) {
@@ -240,6 +258,7 @@ func getFileAsString(fileName string) (string, error) {
 }
 
 func (i *Interpreter) Init() {
+	i.state = false
 	i.stream = &list.List{}
 	i.dstack = &Stack{}
 	i.rstack = &Stack{}
@@ -293,6 +312,10 @@ func (i *Interpreter) Step() bool {
 		return false
 	}
 
+	i.stream.Remove(current)
+
+	currentWordBeingCompiled := i.latest.Front().Value.(*Word)
+
 	word := i.findWordInDictionary(current.Value.(string))
 	if word == nil {
 		dataAsString := current.Value.(string)
@@ -300,18 +323,36 @@ func (i *Interpreter) Step() bool {
 		parsedNum, err := parseNumeral(dataAsString)
 
 		if err == nil {
-			i.dpush(parsedNum)
+			if i.state { // compile mode
+				currentWordBeingCompiled.definition.PushBack(parsedNum)
+			} else { // immediate mode
+				i.dpush(parsedNum)
+			}
 		} else {
 			// just push it on as a string/random thing otherwise
-			i.dpush(dataAsString)
+			if i.state { // compile mode
+				currentWordBeingCompiled.definition.PushBack(dataAsString)
+			} else { // immediate mode
+				i.dpush(dataAsString)
+			}
 		}
 	} else {
-		for codeword := word.definition.Front(); codeword != nil; codeword = codeword.Next() {
-			codeword.Value.(CodeWord)(i)
+		if i.state && !word.immediate { // compile mode
+			currentWordBeingCompiled.definition.PushBackList(word.definition)
+		} else { // immediate mode
+			for codeword := word.definition.Front(); codeword != nil; codeword = codeword.Next() {
+				switch codeword.Value.(type) {
+				case CodeWord:
+					codeword.Value.(CodeWord)(i)
+				case Number:
+					i.dpush(codeword.Value.(Number))
+				case string:
+					i.dpush(codeword.Value.(string))
+				}
+			}
 		}
 	}
 
-	i.stream.Remove(current)
 	return true
 }
 
@@ -330,6 +371,7 @@ func (i *Interpreter) Execute(fileName string) {
 		panic(msg)
 	}
 
+	// if someone loads an empty file, there's no use actually parsing it.
 	if input != "" {
 		i.ExecuteAsREPL(input)
 	}
@@ -348,11 +390,11 @@ func (i *Interpreter) addPrimitiveWordToDictionary(name string, immediate bool,
 }
 
 func (i *Interpreter) addImmediatePrimitiveToDictionary(name string, definition CodeWord) {
-	i.addPrimitiveWordToDictionary(name, false, definition)
+	i.addPrimitiveWordToDictionary(name, true, definition)
 }
 
 func (i *Interpreter) addNormalPrimitiveToDictionary(name string, definition CodeWord) {
-	i.addPrimitiveWordToDictionary(name, true, definition)
+	i.addPrimitiveWordToDictionary(name, false, definition)
 }
 
 func (i *Interpreter) addWordToDictionary(name string, immediate bool,

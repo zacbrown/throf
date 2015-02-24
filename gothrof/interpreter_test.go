@@ -426,5 +426,12 @@ func TestXOR(t *testing.T) {
 }
 
 func TestWordDefinition(t *testing.T) {
-	//dstack := setupInterpreter(": poop 1 2 + ; poop")
+	dstack := setupInterpreter(": poop 1 2 + ; poop")
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AssertAsInt()
+	if elem != 3 {
+		t.Errorf("Word definition using ':' failed. Expected '3' on the stack, got '%d'.", elem)
+	}
 }

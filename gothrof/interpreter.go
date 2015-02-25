@@ -230,7 +230,6 @@ func (i *Interpreter) initPrimitives() {
 
 	cwWord := i.findWordInDictionary("word").definition
 	cwCreate := i.findWordInDictionary("create").definition
-	//	cwComma := i.findWordInDictionary(",")
 	cwRBrac := i.findWordInDictionary("[").definition
 	cwLBrac := i.findWordInDictionary("]").definition
 
@@ -245,6 +244,25 @@ func (i *Interpreter) initPrimitives() {
 	semicolonDef := &list.List{}
 	colonDef.PushBackList(cwLBrac)
 	i.addWordToDictionary(";", true, semicolonDef)
+
+	i.addNormalPrimitiveToDictionary(".", func(inter *Interpreter) {
+		elem := inter.dpop()
+		switch t := elem.(type) {
+		case Number:
+			switch elem.(Number).numType {
+			case IntegerType:
+				fmt.Printf("%d\n", elem.(Number).AssertAsInt())
+			case FloatType:
+				fmt.Printf("%f\n", elem.(Number).AssertAsFloat())
+			default:
+				panic(fmt.Sprintf("Unsupported underlying numeric type: %d", elem.(Number).numType))
+			}
+		case string:
+			fmt.Printf("%s\n")
+		default:
+			panic(fmt.Sprintf("Unsupported type on stack: %T\n", t))
+		}
+	})
 }
 
 func getFileAsString(fileName string) (string, error) {

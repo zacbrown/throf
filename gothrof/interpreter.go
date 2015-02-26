@@ -227,7 +227,7 @@ func (i *Interpreter) initPrimitives() {
 		inter.latest.PushFront(&Word{wordName, false, &list.List{}})
 	})
 	i.addNormalPrimitiveToDictionary(",", func(inter *Interpreter) {
-		currentWordBeingCompiled := inter.latest.Front().Value.(Word).definition
+		currentWordBeingCompiled := inter.latest.Front().Value.(*Word).definition
 		currentWordBeingCompiled.PushBack(inter.dpop())
 	})
 

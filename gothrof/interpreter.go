@@ -243,6 +243,11 @@ func (i *Interpreter) initPrimitives() {
 		currentWordBeingCompiled := inter.latest.Front().Value.(*Word).definition
 		currentWordBeingCompiled.PushBack(inter.dpop())
 	})
+	i.addNormalPrimitiveToDictionary("'", func(inter *Interpreter) {
+		wordName := inter.stream.Front().Value.(string)
+		codeWord := inter.findWordInDictionary(wordName)
+		inter.dpush(codeWord)
+	})
 
 	cwWord := i.findWordInDictionary("word").definition
 	cwCreate := i.findWordInDictionary("create").definition

@@ -64,6 +64,8 @@ func (w *Word) Invoke(i *Interpreter) {
 		switch codeword.Value.(type) {
 		case CodeWord:
 			codeword.Value.(CodeWord)(i)
+		case *Word:
+			codeword.Value.(*Word).Invoke(i)
 		case Number:
 			i.dpush(codeword.Value.(Number))
 		case string:
@@ -249,21 +251,21 @@ func (i *Interpreter) initPrimitives() {
 		inter.dpush(codeWord)
 	})
 
-	cwWord := i.findWordInDictionary("word").definition
-	cwCreate := i.findWordInDictionary("create").definition
-	cwRBrac := i.findWordInDictionary("[").definition
-	cwLBrac := i.findWordInDictionary("]").definition
+	cwWord := i.findWordInDictionary("word")
+	cwCreate := i.findWordInDictionary("create")
+	cwRBrac := i.findWordInDictionary("[")
+	cwLBrac := i.findWordInDictionary("]")
 
 	// ':'
 	colonDef := &list.List{}
-	colonDef.PushBackList(cwWord)
-	colonDef.PushBackList(cwCreate)
-	colonDef.PushBackList(cwRBrac)
+	colonDef.PushBack(cwWord)
+	colonDef.PushBack(cwCreate)
+	colonDef.PushBack(cwRBrac)
 	i.addWordToDictionary(":", false, colonDef)
 
 	// ';'
 	semicolonDef := &list.List{}
-	colonDef.PushBackList(cwLBrac)
+	colonDef.PushBack(cwLBrac)
 	i.addWordToDictionary(";", true, semicolonDef)
 
 	i.addNormalPrimitiveToDictionary(".", func(inter *Interpreter) {
@@ -377,7 +379,7 @@ func (i *Interpreter) Step() bool {
 		}
 	} else {
 		if i.state && !word.immediate { // compile mode
-			currentWordBeingCompiled.definition.PushBackList(word.definition)
+			currentWordBeingCompiled.definition.PushBack(word)
 		} else { // immediate mode
 			word.Invoke(i)
 		}

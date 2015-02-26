@@ -59,6 +59,19 @@ type Word struct {
 	definition *list.List
 }
 
+func (w *Word) Invoke(i *Interpreter) {
+	for codeword := w.definition.Front(); codeword != nil; codeword = codeword.Next() {
+		switch codeword.Value.(type) {
+		case CodeWord:
+			codeword.Value.(CodeWord)(i)
+		case Number:
+			i.dpush(codeword.Value.(Number))
+		case string:
+			i.dpush(codeword.Value.(string))
+		}
+	}
+}
+
 type Interpreter struct {
 	dstack *Stack     // data stack
 	rstack *Stack     // return stack
@@ -361,16 +374,7 @@ func (i *Interpreter) Step() bool {
 		if i.state && !word.immediate { // compile mode
 			currentWordBeingCompiled.definition.PushBackList(word.definition)
 		} else { // immediate mode
-			for codeword := word.definition.Front(); codeword != nil; codeword = codeword.Next() {
-				switch codeword.Value.(type) {
-				case CodeWord:
-					codeword.Value.(CodeWord)(i)
-				case Number:
-					i.dpush(codeword.Value.(Number))
-				case string:
-					i.dpush(codeword.Value.(string))
-				}
-			}
+			word.Invoke(i)
 		}
 	}
 

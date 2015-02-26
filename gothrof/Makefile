@@ -6,7 +6,7 @@ build:
 	go build -o $(BIN_NAME)
 
 test:
-	go test -test.v
+	go test #-test.v
 
 clean:
 	go clean

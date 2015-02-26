@@ -208,6 +208,9 @@ func (i *Interpreter) initPrimitives() {
 		lhs := inter.dpop().(bool)
 		inter.dpush((!rhs && lhs) || (rhs && !lhs))
 	})
+	i.addImmediatePrimitiveToDictionary("immediate", func(inter *Interpreter) {
+		inter.latest.Front().Value.(*Word).immediate = true
+	})
 	i.addImmediatePrimitiveToDictionary("]", func(inter *Interpreter) {
 		inter.state = false
 	})

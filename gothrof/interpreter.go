@@ -55,23 +55,25 @@ type CodeWord func(*Interpreter)
 
 type StringLiteral string
 
+type Quotation *list.List
+
 type Word struct {
 	name       string
 	immediate  bool
 	definition *list.List
 }
 
-func (w *Word) Invoke(i *Interpreter) {
-	for codeword := w.definition.Front(); codeword != nil; codeword = codeword.Next() {
+func Invoke(i *Interpreter, def *list.List) {
+	for codeword := def.Front(); codeword != nil; codeword = codeword.Next() {
 		switch codeword.Value.(type) {
 		case CodeWord:
 			codeword.Value.(CodeWord)(i)
 		case *Word:
-			codeword.Value.(*Word).Invoke(i)
+			Invoke(i, codeword.Value.(*Word).definition)
 		case Number:
 			i.dpush(codeword.Value.(Number))
-		case string:
-			i.dpush(codeword.Value.(string))
+		case StringLiteral:
+			i.dpush(codeword.Value.(StringLiteral))
 		}
 	}
 }
@@ -101,21 +103,47 @@ func collectStringLiteral(r *strings.Reader) StringLiteral {
 	return StringLiteral(buffer.String())
 }
 
-func (i *Interpreter) tokenize(input string) {
+func collectQuotation(r *strings.Reader) Quotation {
+	var buffer bytes.Buffer
+	for ch, _, err := r.ReadRune(); err == nil && ch != ']'; ch, _, err = r.ReadRune() {
+		buffer.WriteRune(ch)
+	}
+
+	parsedTokens := tokenize(buffer.String())
+
+	return Quotation(parsedTokens)
+}
+
+func tokenize(input string) *list.List {
 	reader := strings.NewReader(input)
 	var buffer bytes.Buffer
 	tokens := &list.List{}
 
+	pushElem := func() {
+		token := buffer.String()
+		buffer.Reset()
+
+		tokenNumeral, err := parseNumeral(token)
+		if err == nil {
+			tokens.PushBack(tokenNumeral)
+		} else {
+			tokens.PushBack(token)
+		}
+	}
+
 	for ch, _, err := reader.ReadRune(); err == nil; ch, _, err = reader.ReadRune() {
+
 		if buffer.String() == "string" {
+
 			buffer.Reset()
 			tokens.PushBack(collectStringLiteral(reader))
-		}
+		} else if ch == '[' {
 
-		if ch == '\t' || ch == ' ' || ch == '\n' || ch == '\r' || ch == '\f' {
+			tokens.PushBack(collectQuotation(reader))
+		} else if ch == '\t' || ch == ' ' || ch == '\n' || ch == '\r' || ch == '\f' {
+
 			if buffer.Len() > 0 {
-				tokens.PushBack(buffer.String())
-				buffer.Reset()
+				pushElem()
 			}
 		} else {
 			buffer.WriteRune(ch)
@@ -123,10 +151,10 @@ func (i *Interpreter) tokenize(input string) {
 	}
 
 	if buffer.Len() > 0 {
-		tokens.PushBack(buffer.String())
+		pushElem()
 	}
 
-	i.stream.PushFrontList(tokens)
+	return tokens
 }
 
 func (i *Interpreter) initPrimitives() {
@@ -251,10 +279,10 @@ func (i *Interpreter) initPrimitives() {
 	i.addImmediatePrimitiveToDictionary("immediate", func(inter *Interpreter) {
 		inter.latest.Front().Value.(*Word).immediate = true
 	})
-	i.addImmediatePrimitiveToDictionary("]", func(inter *Interpreter) {
+	i.addImmediatePrimitiveToDictionary(">c", func(inter *Interpreter) {
 		inter.state = false
 	})
-	i.addNormalPrimitiveToDictionary("[", func(inter *Interpreter) {
+	i.addNormalPrimitiveToDictionary("<c", func(inter *Interpreter) {
 		inter.state = true
 	})
 	i.addNormalPrimitiveToDictionary("word", func(inter *Interpreter) {
@@ -278,23 +306,36 @@ func (i *Interpreter) initPrimitives() {
 
 	cwWord := i.findWordInDictionary("word")
 	cwCreate := i.findWordInDictionary("create")
-	cwRBrac := i.findWordInDictionary("[")
-	cwLBrac := i.findWordInDictionary("]")
+	cwCompile := i.findWordInDictionary("<c")
+	cwNormal := i.findWordInDictionary(">c")
 
 	// ':' - word definition
 	colonDef := &list.List{}
 	colonDef.PushBack(cwWord)
 	colonDef.PushBack(cwCreate)
-	colonDef.PushBack(cwRBrac)
+	colonDef.PushBack(cwCompile)
 	i.addWordToDictionary(":", false, colonDef)
 
 	// ';' - word definition termination
 	semicolonDef := &list.List{}
-	colonDef.PushBack(cwLBrac)
+	colonDef.PushBack(cwNormal)
 	i.addWordToDictionary(";", true, semicolonDef)
 
 	i.addNormalPrimitiveToDictionary("if", func(inter *Interpreter) {
+		trueQuotation := inter.dpop().(Quotation)
+		falseQuotation := inter.dpop().(Quotation)
+		predicateAsStr := inter.dpop()
+		predicate, ok := predicateAsStr.(bool)
 
+		if ok {
+			if predicate {
+				Invoke(inter, trueQuotation)
+			} else {
+				Invoke(inter, falseQuotation)
+			}
+		} else {
+			panic(fmt.Sprintf("Conditional word must be used with true/false, got %s.", predicateAsStr))
+		}
 	})
 
 	i.addNormalPrimitiveToDictionary(".", func(inter *Interpreter) {
@@ -312,7 +353,7 @@ func (i *Interpreter) initPrimitives() {
 		case StringLiteral:
 			fmt.Printf("\"%s\"\n", elem.(StringLiteral))
 		default:
-			panic(fmt.Sprintf("Unsupported type on stack: %T\n", t))
+			panic(fmt.Sprintf("Unsupported type on stack: %T (%s)\n", elem, t))
 		}
 	})
 
@@ -398,23 +439,22 @@ func (i *Interpreter) Step() bool {
 			if i.state && !word.immediate { // compile mode
 				currentWordBeingCompiled.definition.PushBack(word)
 			} else { // immediate mode
-				word.Invoke(i)
+				Invoke(i, word.definition)
 			}
 		}
 	}
 
-	parsedNum, err := parseNumeral(dataAsString)
-	if err == nil {
+	dataAsNumber, ok := current.Value.(Number)
+	if ok {
 		if i.state { // compile mode
-			currentWordBeingCompiled.definition.PushBack(parsedNum)
+			currentWordBeingCompiled.definition.PushBack(dataAsNumber)
 		} else { // immediate mode
-			i.dpush(parsedNum)
+			i.dpush(dataAsNumber)
 		}
 	}
 
 	dataAsStringLiteral, ok := current.Value.(StringLiteral)
 	if ok {
-		// just push it on as a string/random thing otherwise
 		if i.state { // compile mode
 			currentWordBeingCompiled.definition.PushBack(dataAsStringLiteral)
 		} else { // immediate mode
@@ -422,11 +462,20 @@ func (i *Interpreter) Step() bool {
 		}
 	}
 
+	dataAsQuotation, ok := current.Value.(Quotation)
+	if ok {
+		if i.state { // compile mode
+			currentWordBeingCompiled.definition.PushBack(dataAsQuotation)
+		} else { // immediate mode
+			i.dpush(dataAsQuotation)
+		}
+	}
+
 	return true
 }
 
 func (i *Interpreter) ExecuteAsREPL(input string) {
-	i.tokenize(input)
+	i.stream.PushFrontList(tokenize(input))
 
 	for i.Step() == true {
 	}

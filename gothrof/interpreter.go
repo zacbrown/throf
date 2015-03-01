@@ -53,6 +53,8 @@ const (
 
 type CodeWord func(*Interpreter)
 
+type StringLiteral string
+
 type Word struct {
 	name       string
 	immediate  bool
@@ -83,12 +85,33 @@ type Interpreter struct {
 	state  bool       // 'false' == immediate, 'true' == compiling
 }
 
+func collectStringLiteral(r *strings.Reader) StringLiteral {
+	// pick up the opening quotation mark
+	for ch, _, err := r.ReadRune(); err == nil && ch != '"'; ch, _, err = r.ReadRune() {
+
+	}
+
+	var buffer bytes.Buffer
+
+	// collect till we get the closing quotation mark
+	for ch, _, err := r.ReadRune(); err == nil && ch != '"'; ch, _, err = r.ReadRune() {
+		buffer.WriteRune(ch)
+	}
+
+	return StringLiteral(buffer.String())
+}
+
 func (i *Interpreter) tokenize(input string) {
 	reader := strings.NewReader(input)
 	var buffer bytes.Buffer
 	tokens := &list.List{}
 
 	for ch, _, err := reader.ReadRune(); err == nil; ch, _, err = reader.ReadRune() {
+		if buffer.String() == "string" {
+			buffer.Reset()
+			tokens.PushBack(collectStringLiteral(reader))
+		}
+
 		if ch == '\t' || ch == ' ' || ch == '\n' || ch == '\r' || ch == '\f' {
 			if buffer.Len() > 0 {
 				tokens.PushBack(buffer.String())
@@ -99,7 +122,9 @@ func (i *Interpreter) tokenize(input string) {
 		}
 	}
 
-	tokens.PushBack(buffer.String())
+	if buffer.Len() > 0 {
+		tokens.PushBack(buffer.String())
+	}
 
 	i.stream.PushFrontList(tokens)
 }
@@ -256,17 +281,21 @@ func (i *Interpreter) initPrimitives() {
 	cwRBrac := i.findWordInDictionary("[")
 	cwLBrac := i.findWordInDictionary("]")
 
-	// ':'
+	// ':' - word definition
 	colonDef := &list.List{}
 	colonDef.PushBack(cwWord)
 	colonDef.PushBack(cwCreate)
 	colonDef.PushBack(cwRBrac)
 	i.addWordToDictionary(":", false, colonDef)
 
-	// ';'
+	// ';' - word definition termination
 	semicolonDef := &list.List{}
 	colonDef.PushBack(cwLBrac)
 	i.addWordToDictionary(";", true, semicolonDef)
+
+	i.addNormalPrimitiveToDictionary("if", func(inter *Interpreter) {
+
+	})
 
 	i.addNormalPrimitiveToDictionary(".", func(inter *Interpreter) {
 		elem := inter.dpop()
@@ -280,11 +309,15 @@ func (i *Interpreter) initPrimitives() {
 			default:
 				panic(fmt.Sprintf("Unsupported underlying numeric type: %d", elem.(Number).numType))
 			}
-		case string:
-			fmt.Printf("%s\n")
+		case StringLiteral:
+			fmt.Printf("\"%s\"\n", elem.(StringLiteral))
 		default:
 			panic(fmt.Sprintf("Unsupported type on stack: %T\n", t))
 		}
+	})
+
+	i.addNormalPrimitiveToDictionary("stack", func(inter *Interpreter) {
+		inter.DumpStack()
 	})
 }
 
@@ -357,31 +390,35 @@ func (i *Interpreter) Step() bool {
 
 	currentWordBeingCompiled := i.latest.Front().Value.(*Word)
 
-	word := i.findWordInDictionary(current.Value.(string))
-	if word == nil {
-		dataAsString := current.Value.(string)
+	dataAsString, ok := current.Value.(string)
+	if ok {
+		word := i.findWordInDictionary(dataAsString)
 
-		parsedNum, err := parseNumeral(dataAsString)
-
-		if err == nil {
-			if i.state { // compile mode
-				currentWordBeingCompiled.definition.PushBack(parsedNum)
+		if word != nil {
+			if i.state && !word.immediate { // compile mode
+				currentWordBeingCompiled.definition.PushBack(word)
 			} else { // immediate mode
-				i.dpush(parsedNum)
-			}
-		} else {
-			// just push it on as a string/random thing otherwise
-			if i.state { // compile mode
-				currentWordBeingCompiled.definition.PushBack(dataAsString)
-			} else { // immediate mode
-				i.dpush(dataAsString)
+				word.Invoke(i)
 			}
 		}
-	} else {
-		if i.state && !word.immediate { // compile mode
-			currentWordBeingCompiled.definition.PushBack(word)
+	}
+
+	parsedNum, err := parseNumeral(dataAsString)
+	if err == nil {
+		if i.state { // compile mode
+			currentWordBeingCompiled.definition.PushBack(parsedNum)
 		} else { // immediate mode
-			word.Invoke(i)
+			i.dpush(parsedNum)
+		}
+	}
+
+	dataAsStringLiteral, ok := current.Value.(StringLiteral)
+	if ok {
+		// just push it on as a string/random thing otherwise
+		if i.state { // compile mode
+			currentWordBeingCompiled.definition.PushBack(dataAsStringLiteral)
+		} else { // immediate mode
+			i.dpush(dataAsStringLiteral)
 		}
 	}
 

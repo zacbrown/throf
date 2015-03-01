@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -433,5 +434,37 @@ func TestWordDefinition(t *testing.T) {
 	elem := dstack.Pop().(Number).AssertAsInt()
 	if elem != 3 {
 		t.Errorf("Word definition using ':' failed. Expected '3' on the stack, got '%d'.", elem)
+	}
+}
+
+func TestStringLiteral(t *testing.T) {
+	testStr := "abcdefg 123456"
+	dstack := setupInterpreter(fmt.Sprintf("string \"%s\"", testStr))
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(StringLiteral)
+	if elem != StringLiteral(testStr) {
+		t.Errorf("Expected string literal '%s', got '%s'.", testStr, elem)
+	}
+}
+
+func TestIfStatement(t *testing.T) {
+	dstack := setupInterpreter("1 2 < [ 456 ] [ 789 ] if")
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem := dstack.Pop().(Number).AssertAsInt()
+	if elem != 789 {
+		t.Errorf("Expected 789, got %d", elem)
+	}
+
+	dstack = setupInterpreter("2 1 < [ 456 ] [ 789 ] if")
+
+	validateDepth(t, dstack.Length(), 1)
+
+	elem = dstack.Pop().(Number).AssertAsInt()
+	if elem != 456 {
+		t.Errorf("Expected 456, got %d", elem)
 	}
 }

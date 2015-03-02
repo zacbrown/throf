@@ -438,13 +438,13 @@ func TestWordDefinition(t *testing.T) {
 }
 
 func TestStringLiteral(t *testing.T) {
-	testStr := "abcdefg 123456"
-	dstack := setupInterpreter(fmt.Sprintf("string \"%s\"", testStr))
+	testStr := StringLiteral{string: "abcdefg 123456"}
+	dstack := setupInterpreter(fmt.Sprintf("string \"%s\"", testStr.string))
 
 	validateDepth(t, dstack.Length(), 1)
 
 	elem := dstack.Pop().(StringLiteral)
-	if elem != StringLiteral(testStr) {
+	if elem != testStr {
 		t.Errorf("Expected string literal '%s', got '%s'.", testStr, elem)
 	}
 }

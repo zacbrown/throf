@@ -10,22 +10,32 @@ import (
 )
 
 type CodeWord func(*Interpreter)
-type StringLiteral string
-type Quotation *list.List
+type StringLiteral struct {
+	string
+}
+type Quotation struct {
+	list.List
+}
 
 type Word struct {
 	name       string
 	immediate  bool
-	definition *list.List
+	definition *Quotation
 }
 
-func Invoke(i *Interpreter, def *list.List) {
-	for codeword := def.Front(); codeword != nil; codeword = codeword.Next() {
+type Invokable interface {
+	Invoke(i *Interpreter)
+}
+
+func (q *Quotation) Invoke(i *Interpreter) {
+	for codeword := q.Front(); codeword != nil; codeword = codeword.Next() {
 		switch codeword.Value.(type) {
 		case CodeWord:
 			codeword.Value.(CodeWord)(i)
 		case *Word:
-			Invoke(i, codeword.Value.(*Word).definition)
+			codeword.Value.(*Word).definition.Invoke(i)
+		case bool:
+			i.dpush(codeword.Value.(bool))
 		case Number:
 			i.dpush(codeword.Value.(Number))
 		case StringLiteral:
@@ -56,10 +66,10 @@ func collectStringLiteral(r *strings.Reader) StringLiteral {
 		buffer.WriteRune(ch)
 	}
 
-	return StringLiteral(buffer.String())
+	return StringLiteral{buffer.String()}
 }
 
-func collectQuotation(r *strings.Reader) Quotation {
+func collectQuotation(r *strings.Reader) *Quotation {
 	var buffer bytes.Buffer
 	for ch, _, err := r.ReadRune(); err == nil && ch != ']'; ch, _, err = r.ReadRune() {
 		buffer.WriteRune(ch)
@@ -67,7 +77,7 @@ func collectQuotation(r *strings.Reader) Quotation {
 
 	parsedTokens := tokenize(buffer.String())
 
-	return Quotation(parsedTokens)
+	return &Quotation{*parsedTokens}
 }
 
 func tokenize(input string) *list.List {
@@ -248,7 +258,7 @@ func (i *Interpreter) initPrimitives() {
 	})
 	i.addNormalPrimitiveToDictionary("create", func(inter *Interpreter) {
 		wordName := inter.dpop().(string)
-		inter.latest.PushFront(&Word{wordName, false, &list.List{}})
+		inter.latest.PushFront(&Word{wordName, false, &Quotation{}})
 	})
 	i.addNormalPrimitiveToDictionary(",", func(inter *Interpreter) {
 		currentWordBeingCompiled := inter.latest.Front().Value.(*Word).definition
@@ -266,28 +276,28 @@ func (i *Interpreter) initPrimitives() {
 	cwNormal := i.findWordInDictionary(">c")
 
 	// ':' - word definition
-	colonDef := &list.List{}
+	colonDef := &Quotation{}
 	colonDef.PushBack(cwWord)
 	colonDef.PushBack(cwCreate)
 	colonDef.PushBack(cwCompile)
 	i.addWordToDictionary(":", false, colonDef)
 
 	// ';' - word definition termination
-	semicolonDef := &list.List{}
+	semicolonDef := &Quotation{}
 	colonDef.PushBack(cwNormal)
 	i.addWordToDictionary(";", true, semicolonDef)
 
 	i.addNormalPrimitiveToDictionary("if", func(inter *Interpreter) {
-		trueQuotation := inter.dpop().(Quotation)
-		falseQuotation := inter.dpop().(Quotation)
+		trueQuotation := inter.dpop().(*Quotation)
+		falseQuotation := inter.dpop().(*Quotation)
 		predicateAsStr := inter.dpop()
 		predicate, ok := predicateAsStr.(bool)
 
 		if ok {
 			if predicate {
-				Invoke(inter, trueQuotation)
+				trueQuotation.Invoke(inter)
 			} else {
-				Invoke(inter, falseQuotation)
+				falseQuotation.Invoke(inter)
 			}
 		} else {
 			panic(fmt.Sprintf("Conditional word must be used with true/false, got %s.", predicateAsStr))
@@ -307,7 +317,7 @@ func (i *Interpreter) initPrimitives() {
 				panic(fmt.Sprintf("Unsupported underlying numeric type: %d", elem.(Number).numType))
 			}
 		case StringLiteral:
-			fmt.Printf("\"%s\"\n", elem.(StringLiteral))
+			fmt.Printf("\"%s\"\n", elem.(StringLiteral).string)
 		default:
 			panic(fmt.Sprintf("Unsupported type on stack: %T (%s)\n", elem, t))
 		}
@@ -395,7 +405,7 @@ func (i *Interpreter) Step() bool {
 			if i.state && !word.immediate { // compile mode
 				currentWordBeingCompiled.definition.PushBack(word)
 			} else { // immediate mode
-				Invoke(i, word.definition)
+				word.definition.Invoke(i)
 			}
 		}
 	}
@@ -418,7 +428,7 @@ func (i *Interpreter) Step() bool {
 		}
 	}
 
-	dataAsQuotation, ok := current.Value.(Quotation)
+	dataAsQuotation, ok := current.Value.(*Quotation)
 	if ok {
 		if i.state { // compile mode
 			currentWordBeingCompiled.definition.PushBack(dataAsQuotation)
@@ -457,7 +467,7 @@ func (i *Interpreter) addPrimitiveWordToDictionary(name string, immediate bool,
 	word := &Word{}
 	word.name = name
 	word.immediate = immediate
-	word.definition = &list.List{}
+	word.definition = &Quotation{}
 	word.definition.PushBack(definition)
 
 	i.latest.PushFront(word)
@@ -472,7 +482,7 @@ func (i *Interpreter) addNormalPrimitiveToDictionary(name string, definition Cod
 }
 
 func (i *Interpreter) addWordToDictionary(name string, immediate bool,
-	definition *list.List) {
+	definition *Quotation) {
 
 	i.latest.PushFront(&Word{name, immediate, definition})
 }
